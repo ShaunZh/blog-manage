@@ -7,14 +7,11 @@ const app = express();
 
 config.database.connect();
 
-app.use(bodyParser.json({ limit: '1mb' })); // body-parser 解析json格式数据
-app.use(bodyParser.urlencoded({ // 此项必须在 bodyParser.json 下面,为参数编码
-  extended: true,
-}));
-
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 routes(app);
 
-app.listen(3000, () => {
+app.listen(3001, () => {
   console.log('Example app listening on port 3000!');
 });
 

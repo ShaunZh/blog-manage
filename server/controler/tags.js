@@ -1,6 +1,7 @@
 const express = require('express');
 
 const utils = require('../utils/functions');
+const _ = require('../utils/underscroe');
 
 const router = express.Router();
 const database = require('../config').database; // 引入数据库
@@ -19,7 +20,9 @@ router.get('/', (req, res) => {
     res.send(JSON.stringify({
       code: 200,
       msg: '成功',
-      items,
+      data: {
+        items,
+      },
     }));
   });
 });
@@ -30,23 +33,111 @@ router.get('/', (req, res) => {
  * @return
  */
 router.post('/', (req, res) => {
-  const data = req.body;
-  if ((data instanceof Object) || (data !== null)) {
-
-  }
-  const sql = 'INSERT INTO WEB_TAG SET ?';
-  const param = { ID: utils.getUuid(), CREATE_TIME: data.createTime, NAME: data.name };
-  // sql = database.format(sql, inserts);
-  database.query(sql, param, (error, results, fields) => {
-    if (error) {
-      throw new Error(error);
+  try {
+    const data = req.body;
+    if (!_.isObject(data)) {
+      throw new Error('参数必须是一个对象');
     }
+    if (_.isNull(data)) {
+      throw new Error('参数不能为null');
+    }
+    const sql = 'INSERT INTO WEB_TAG SET ?';
+    const params = { ID: utils.getUuid(), CREATE_TIME: data.createTime, NAME: data.name };
+    database.query(sql, params, (error, results, fields) => {
+      if (error) {
+        throw new Error(error);
+      }
+      res.send(JSON.stringify({
+        code: 200,
+        data: null,
+        msg: '添加成功',
+      }));
+    });
+  } catch (e) {
     res.send(JSON.stringify({
-      code: 200,
-      items: [],
-      msg: '添加成功',
+      code: 400,
+      msg: e.message,
+      data: null,
     }));
-  });
+  }
 });
 
+/**
+ * @description 更新tag
+ * @param
+ * @return
+ */
+router.put('/', (req, res) => {
+  try {
+    const data = req.body;
+    if (!_.isObject(data)) {
+      throw new Error('参数必须是一个对象');
+    }
+    if (_.isNull(data)) {
+      throw new Error('参数不能为null');
+    }
+    if (_.isEmpty(data.name)) {
+      throw new Error('标签名称不能为空');
+    }
+    if (_.isEmpty(data.modifyTime)) {
+      throw new Error('没有修改时间');
+    }
+    const sql = 'UPDATE WEB_TAG SET NAME = ?, MODIFY_TIME = ? WHERE ID = ?';
+    const params = [data.name, data.modifyTime, data.id];
+    database.query(sql, params, (error, results, fields) => {
+      if (error) {
+        throw new Error(error);
+      }
+      res.send(JSON.stringify({
+        code: 200,
+        data: null,
+        msg: '更新成功',
+      }));
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      code: 400,
+      msg: e.message,
+      data: null,
+    }));
+  }
+});
+
+
+/**
+ * @description 删除tag
+ * @param
+ * @return
+ */
+router.delete('/', (req, res) => {
+  try {
+    const data = req.body;
+    if (!_.isObject(data)) {
+      throw new Error('参数必须是一个对象');
+    }
+    if (_.isNull(data)) {
+      throw new Error('参数不能为null');
+    }
+    if (_.isEmpty(data.id)) {
+      throw new Error('标签id不能为空');
+    }
+    const sql = `DELETE FROM WEB_TAG WHERE ID = "${data.id}"`;
+    database.query(sql, (error, results, fields) => {
+      if (error) {
+        throw new Error(error);
+      }
+      res.send(JSON.stringify({
+        code: 200,
+        data: null,
+        msg: '删除成功',
+      }));
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      code: 400,
+      msg: e.message,
+      data: null,
+    }));
+  }
+});
 module.exports = router;
