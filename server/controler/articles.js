@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
     if (_.isObject(data)) {
       // 是否返回指定tag的文章列表
       if (!_.isUndefined(data.tagId) && data.tagId !== '') {
-        sql += `WHERE TAG_ID = ${data.tagId} `;
+        sql += `WHERE TAG_ID = "${data.tagId}" `;
       }
       if (!_.isUndefined(data.offset) && _.isNumber(data.offset)) {
         offset = data.offset;
@@ -35,9 +35,20 @@ router.get('/', (req, res) => {
       if (error) {
         throw new Error(error);
       }
-      const items = JSON.parse(JSON.stringify(results));
+      const items = (JSON.parse(JSON.stringify(results))).map((item) => {
+        return {
+          id: item.ID,
+          tagId: item.TAG_ID,
+          title: item.TITLE,
+          author: item.AUTHOR,
+          abstract: item.ABSTRACT,
+          createTime: item.CREATE_TIME,
+          modifyTime: item.MODIFY_TIME,
+          content: item.CONTENT,
+        };
+      });
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         msg: '成功',
         data: {
           items,
@@ -46,7 +57,7 @@ router.get('/', (req, res) => {
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -71,9 +82,17 @@ router.get('/:id', (req, res) => {
       if (error) {
         throw new Error(error);
       }
-      const items = JSON.parse(JSON.stringify(results));
+      const items = (JSON.parse(JSON.stringify(results))).map((item) => {
+        return {
+          id: item.ID,
+          author: item.AUTHOR,
+          content: item.CONTENT,
+          title: item.TITLE,
+          createTime: item.CREATE_TIME,
+        };
+      });
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         msg: '成功',
         data: {
           items,
@@ -82,7 +101,7 @@ router.get('/:id', (req, res) => {
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -111,13 +130,14 @@ router.post('/', (req, res) => {
       TITLE: data.title, // 标题
       CONTENT: data.content, // 正文
       ABSTRACT: data.abstract, // 介绍
+      IS_PUBLISH: data.isPublish, // 是否发布
     };
     database.query(sql, params, (error, results, fields) => {
       if (error) {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         data: {
           id: params.ID,
           title: params.TITLE,
@@ -127,7 +147,7 @@ router.post('/', (req, res) => {
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -186,7 +206,7 @@ router.put('/', (req, res) => {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         data: {
           id: data.id,
         },
@@ -195,7 +215,7 @@ router.put('/', (req, res) => {
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -224,14 +244,14 @@ router.delete('/', (req, res) => {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         data: null,
         msg: '删除成功',
       }));
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));

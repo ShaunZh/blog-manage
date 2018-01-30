@@ -16,9 +16,17 @@ router.get('/', (req, res) => {
     if (error) {
       throw new Error(error);
     }
-    const items = JSON.parse(JSON.stringify(results));
+    let items = JSON.parse(JSON.stringify(results));
+    items = items.map((item) => {
+      const obj = {};
+      obj.id = item.ID;
+      obj.name = item.NAME;
+      obj.createTime = item.CREATE_TIME;
+      obj.modifyTime = item.MODIFY_TIME;
+      return obj;
+    });
     res.send(JSON.stringify({
-      code: 200,
+      status: 200,
       msg: '成功',
       data: {
         items,
@@ -41,21 +49,26 @@ router.post('/', (req, res) => {
     if (_.isNull(data)) {
       throw new Error('参数不能为null');
     }
+    const id = utils.getUuid();
     const sql = 'INSERT INTO WEB_TAG SET ?';
-    const params = { ID: utils.getUuid(), CREATE_TIME: data.createTime, NAME: data.name };
+    const params = { ID: id, CREATE_TIME: data.createTime, NAME: data.name };
     database.query(sql, params, (error, results, fields) => {
       if (error) {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
-        data: null,
+        status: 200,
+        data: {
+          id,
+          createTime: data.createTime,
+          name: data.name,
+        },
         msg: '添加成功',
       }));
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -89,14 +102,14 @@ router.put('/', (req, res) => {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         data: null,
         msg: '更新成功',
       }));
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
@@ -127,14 +140,14 @@ router.delete('/', (req, res) => {
         throw new Error(error);
       }
       res.send(JSON.stringify({
-        code: 200,
+        status: 200,
         data: null,
         msg: '删除成功',
       }));
     });
   } catch (e) {
     res.send(JSON.stringify({
-      code: 400,
+      status: 400,
       msg: e.message,
       data: null,
     }));
