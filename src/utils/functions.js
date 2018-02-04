@@ -26,4 +26,4 @@ const utils = {
     return (`${year}-${month}-${day} ${hour}:${minute}`);
   },
 };
-export default utils ;
+export default utils;
