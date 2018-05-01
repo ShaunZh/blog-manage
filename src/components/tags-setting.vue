@@ -70,7 +70,6 @@ export default {
       }
     },
     tagsList(newValue) {
-      debugger
       this.tagsListBk = JSON.parse(JSON.stringify(newValue));
       this.tagsListBk = this.tagsListBk.map(item =>
         Object.assign({}, item, { isDispSetting: false }));
@@ -148,7 +147,6 @@ export default {
      * @return
      */
     modifyTag(index) {
-      debugger
       this.$prompt('请输入新的文集名', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
