@@ -96,14 +96,12 @@ TkSuQmCC" /></svg>
         </div>
       </li>
     </ul>
-    <div class="add-article-bottom row m-0 no-gutters" @click.stop="submitAddArticle('false')">
+    <div class="add-on-down row m-0 no-gutters" @click.stop="submitAddArticle('false')">
       <p class="py-3 m-0 px-3 mx-3">
         <i class="font-weight-bold add-icon">+</i>
         在下方新建文章
       </p>
     </div>
-    <div>test git</div>
-
   </div>
 </template>
 
@@ -172,6 +170,9 @@ TkSuQmCC" /></svg>
     border-right: 1px solid #ccc;
     .add-article {
       border-bottom: 1px solid #ccc;
+      &:hover {
+        cursor: pointer;
+      }
     }
     .article-content {
       height: 100%;
@@ -181,11 +182,16 @@ TkSuQmCC" /></svg>
         border-left: 5px solid transparent;
         border-bottom: 1px solid #ccc;
         position: relative;
+        &:hover {
+          cursor: pointer;
+          background: #e6e6e6;
+        }
         &.active {
           border-left: 5px solid #ea725d;
           background: #e6e6e6;
         }
         .setting-info {
+          z-index: 10;
           position: absolute;
           top: 30px;
           left: -60px;
@@ -223,13 +229,17 @@ TkSuQmCC" /></svg>
         }
       }
     }
-    .add-article-bottom {
+    .add-on-down {
       color: #999;
       line-height: 30px;
       font-size: 14px;
       .add-icon {
         font-style: normal;
         font-size: 16px;
+      }
+      &:hover {
+        cursor: pointer;
+        color: #333;
       }
     }
   }
