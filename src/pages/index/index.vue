@@ -8,14 +8,19 @@
                      @updateTag="updateTag"
         ></TagsSetting>
       </div>
-      <div class="col-2">
-        <ArticlesList :articlesList="articlesList">
+      <div class="col-3">
+        <ArticlesList :articlesList="articlesList"
+                      @submitAddArticle="submitAddArticle"
+                      @deleteArticle="deleteArticle"
+                      @switchArticle="getArticle"
+        >
         </ArticlesList>
       </div>
-      <!--<div class="col-8">-->
-        <!--<ArticleDetails @submitAddArticle="submitAddArticle"-->
-                        <!--:articleInfo="articleInfo"></ArticleDetails>-->
-      <!--</div>-->
+      <div class="col-7">
+        <ArticleDetails :articleInfo="articleInfo"
+                        @submitAddArticle="submitAddArticle"
+        ></ArticleDetails>
+      </div>
     </div>
   </div>
 </template>
@@ -30,7 +35,7 @@ import utils from '@/utils/functions';
 export default {
   components: {
     TagsSetting,
-    // ArticleDetails,
+    ArticleDetails,
     ArticlesList,
   },
   data() {
@@ -52,7 +57,7 @@ export default {
     currentArticleIndex(newValue) {
       if (typeof newValue === 'number' && this.articlesList.length
         && this.articlesList[newValue] !== undefined) {
-        this.getArticle();
+        this.getArticle(newValue);
       } else {
         this.articleInfo = null;
       }
@@ -91,8 +96,9 @@ export default {
         })
           .then((response) => {
             if (response.data.status === 200 && response.data.data.items !== undefined) {
+              // todo : isDispSetting 是用于控制显示设置信息的开关，不应该在此处放在articlesList中，应该放在aritcls-list.vue中
               this.articlesList = response.data.data.items.map(item =>
-                Object.assign({}, item, { isDispSetting: false }));
+                Object.assign({}, item, {isDispSetting: false}));
               this.currentArticleIndex = this.articlesList.length ? 0 : null;
             } else {
               throw new Error(response.data.msg);
@@ -108,15 +114,15 @@ export default {
      * @param
      * @return
      */
-    getArticle() {
+    getArticle(index) {
       let articleId = '';
-      if (this.articlesList[this.currentArticleIndex] !== undefined) {
-        articleId = this.articlesList[this.currentArticleIndex].id;
+      if (this.articlesList[index] !== undefined) {
+        articleId = this.articlesList[index].id;
         axios.get(`http://127.0.0.1:3000/articles/${articleId}`)
           .then((response) => {
             if (response.data.status === 200 &&
-                response.data.data.items !== undefined &&
-                response.data.data.items.length) {
+              response.data.data.items !== undefined &&
+              response.data.data.items.length) {
               this.articleInfo = response.data.data.items[0];
             } else {
               throw new Error(response.data.msg);
@@ -194,13 +200,15 @@ export default {
     },
     /**
      * @description 添加文章
-     * @param
+     * @param {isPublish}Boolean —— true: 未发表， false：发表
+     *        {sort}number —— 1：文章排在文集的最前面；-1：文章排在文集的最后面
+     *        {articleInfo}object —— 文章信息
      * @return
      */
-    submitAddArticle(isPublish, articleInfo) {
-      debugger
+    submitAddArticle(isPublish, sort, articleInfo) {
       let title = '';
       let content = '';
+      // 当文章信息为undefined时，设置文章标题为日期
       if (articleInfo === undefined) {
         title = utils.getDate().substr(0, 10);
         content = '';
@@ -214,17 +222,18 @@ export default {
         authod: '大丸子',
         createTime: utils.getDate(),
         content,
-        isPublish: isPublish || 'false',
+        isPublish: isPublish || false,
+        sort,
       };
       axios({
         url: 'http://127.0.0.1:3000/articles',
         method: 'POST',
         data: JSON.stringify(articleData),
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
       })
         .then((response) => {
           if (response.data.status === 200) {
-            this.articlesList.push(Object.assign(articleData, { id: response.data.data.id }));
+            this.articlesList.push(Object.assign(articleData, { id: response.data.data.id, isDispSetting: false }));
             this.currentArticleIndex = this.articlesList.length - 1;
             this.$message({
               type: 'success',
@@ -250,11 +259,40 @@ export default {
         data: JSON.stringify({
           id: this.tagsList[index].id,
         }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
       })
         .then((response) => {
           if (response.data.status === 200) {
             this.tagsList.splice(index, 1);
+            this.$message({
+              type: 'success',
+              message: '删除成功!',
+            });
+          } else {
+            throw new Error(response.msg);
+          }
+        })
+        .catch((error) => {
+          console.error(`删除失败：${error.message}`);
+        });
+    },
+    /**
+     * @description 删除文章
+     * @param
+     * @return
+     */
+    deleteArticle(index) {
+      axios({
+        url: 'http://127.0.0.1:3000/articles',
+        method: 'DELETE',
+        data: JSON.stringify({
+          id: this.articlesList[index].id,
+        }),
+        headers: {'Content-Type': 'application/json'},
+      })
+        .then((response) => {
+          if (response.data.status === 200) {
+            this.articlesList.splice(index, 1);
             this.$message({
               type: 'success',
               message: '删除成功!',
