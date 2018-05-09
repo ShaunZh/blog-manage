@@ -2,7 +2,7 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 
 import Vue from 'vue';
-import { MessageBox, Message } from 'element-ui';
+import { MessageBox, Message, Notification } from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 
 import App from './App';
@@ -18,6 +18,7 @@ Vue.prototype.$msgbox = MessageBox;
 Vue.prototype.$confirm = MessageBox.confirm;
 Vue.prototype.$prompt = MessageBox.prompt;
 Vue.prototype.$message = Message;
+Vue.prototype.$notify = Notification;
 
 /* eslint-disable no-new */
 new Vue({

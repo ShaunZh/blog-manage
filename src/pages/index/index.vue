@@ -19,6 +19,7 @@
       <div class="col-7">
         <ArticleDetails :articleInfo="articleInfo"
                         @submitAddArticle="submitAddArticle"
+                        @publish="publishArticle"
         ></ArticleDetails>
       </div>
     </div>
@@ -302,8 +303,65 @@ export default {
           }
         })
         .catch((error) => {
-          console.error(`删除失败：${error.message}`);
+          this.$notify.error({
+            message: `删除失败：${error.message}`,
+          });
         });
+    },
+    /**
+     * @description 发布文章
+     * @param {isPublish}Boolean —— true：发布，false：撤销发布
+     *        {articleInfo}Object —— 发布的文章信息
+     * @return
+     */
+    publishArticle(isPublish, articleInfo) {
+      // 发布文章
+      if (isPublish) {
+        axios({
+          url: 'http://127.0.0.1:3000/articles',
+          method: 'UPDATE',
+          data: JSON.stringify({
+            id: this.articlesList[this.currentArticleIndex].id,
+            isPublish: false,
+          }),
+          headers: { 'Content-Type': 'applcation/json' },
+        })
+          .then((response) => {
+            if (response.data.status === 200) {
+              this.articlesList[this.currentArticleIndex] = Object.assign(articleInfo, { isPublish: true });
+            } else {
+              throw new Error(response.data.message);
+            }
+          })
+          .catch((error) => {
+            this.$notify.error({
+              message: `发布失败：${error.message}`,
+            });
+          });
+      } else {
+        // 撤销发布
+        axios({
+          url: 'http://127.0.0.1:3000/articles',
+          method: 'UPDATE',
+          data: JSON.stringify({
+            id: this.articlesList[this.currentArticleIndex].id,
+            isPublish: false,
+          }),
+          headers: { 'Content-Type': 'applcation/json' },
+        })
+          .then((response) => {
+            if (response.data.status === 200) {
+              this.articlesList[this.currentArticleIndex].isPublish = false;
+            } else {
+              throw new Error(response.data.message);
+            }
+          })
+          .catch((error) => {
+            this.$notify.error({
+              message: `撤销失败：${error.message}`,
+            });
+          });
+      }
     },
   },
 };
