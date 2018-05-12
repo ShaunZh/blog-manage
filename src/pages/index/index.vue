@@ -217,6 +217,7 @@ export default {
         title = articleInfo.title;
         content = articleInfo.content;
       }
+      debugger
       const articleData = {
         title,
         tagId: this.tagsList[this.currentTagIndex].id,
