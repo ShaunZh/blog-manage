@@ -27,7 +27,7 @@ const sendActiveEmail = (username, emailAddr, checkCode, callback) => {
     // 邮件内容，HTML格式
     // 接收激活请求的链接
     // html: `<p>点击激活：<a href="http://localhost:3000/checkCode?username=${username}&checkCode=${checkCode}"></a></p>`,
-    html: `<a href="http://localhost:3000/checkCode?username=${username}&checkCode=${checkCode}">点击激活</a>`,
+    html: `<a href="http://localhost:3000/activeAccount?username=${username}&checkCode=${checkCode}">点击激活</a>`,
   };
   email(emailInfo, () => {
     callback();
@@ -229,10 +229,10 @@ router.post('/', (req, res) => {
           Object.assign(data, { emailValid: false });
         }
         // 如果校验username和email都没有注册，则发送激活邮件
-        if (Object.keys(data).length !== 0) {
-
+        if (Object.keys(data).length === 0) {
           // 产生随机的6位校验码
           const checkCode = Math.floor(Math.random() * 1000000);
+          const newDate = new Date();
           // 在此处插入一条用户信息
           const userData = {
             ID: utils.getUuid(),
@@ -243,11 +243,13 @@ router.post('/', (req, res) => {
             IS_ACTIVE: false,
             MOBILE: mobile,
             CHECK_CODE: checkCode, // 校验码
+            ACTIVE_DEADLINE: (newDate.setMinutes(newDate.getMinutes() + 30)).toString(), // 设置激活链接过期时间
           };
           // 插入用户数据
           database.query('INSERT INTO WEB_USER SET ?', userData, (error3, results3, fields3) => {
             if (error3) {
-              throw new Error(error3);
+              console.log(error3.message);
+              throw new Error(error3.message);
             }
             // 发送激活信息
             sendActiveEmail(username, emailAddr, checkCode, () => {
@@ -274,6 +276,5 @@ router.post('/', (req, res) => {
     }));
   }
 });
-
 
 module.exports = router;
