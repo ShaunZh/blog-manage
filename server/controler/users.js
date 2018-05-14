@@ -233,6 +233,9 @@ router.post('/', (req, res) => {
           // 产生随机的6位校验码
           const checkCode = Math.floor(Math.random() * 1000000);
           const newDate = new Date();
+          const accessToken = jwt.sign({ username }, tokenSecret, {
+            expiresIn: '7 days',
+          });
           // 在此处插入一条用户信息
           const userData = {
             ID: utils.getUuid(),

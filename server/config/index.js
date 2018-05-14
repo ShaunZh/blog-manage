@@ -11,4 +11,6 @@ config.databaseConfig = {
 
 config.database = mysql.createConnection(config.databaseConfig);
 
+config.tokenSecret = 'helloworld';
+
 module.exports = config;
