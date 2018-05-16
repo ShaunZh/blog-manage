@@ -23,9 +23,10 @@ router.post('/', (req, res) => {
       }
       if (results.length) {
         if (password === results[0].PASSWORD) {
-          const token = jwt.sign({ username }, tokenSecret, {
-            expiresIn: '7 days',
-          });
+          const token = jwt.sign({
+            iss: results[0].ID,
+            exp: Math.floor(Date.now() + (30 * 24 * 60 * 60 * 1000)) },
+            tokenSecret);
           console.log(token);
           const updateSql = `UPDATE WEB_USER SET ACCESS_TOKEN = ? WHERE USERNAME = '${username}';`;
           const updateParam = [token];

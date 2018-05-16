@@ -12,7 +12,8 @@ const database = require('../config').database; // 引入数据库
  * @return
  */
 router.get('/', (req, res) => {
-  database.query('SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_TAG ORDER BY CREATE_TIME', (error, results, fields) => {
+  const userId = req.userInfo.userId;
+  database.query(`SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_TAG WHERE USER_ID = '${userId}' ORDER BY CREATE_TIME`, (error, results, fields) => {
     if (error) {
       throw new Error(error);
     }
@@ -50,8 +51,9 @@ router.post('/', (req, res) => {
       throw new Error('参数不能为null');
     }
     const id = utils.getUuid();
+    const userId = req.userInfo.userId;
     const sql = 'INSERT INTO WEB_TAG SET ?';
-    const params = { ID: id, CREATE_TIME: data.createTime, NAME: data.name };
+    const params = { ID: id, CREATE_TIME: data.createTime, NAME: data.name, USER_ID: userId };
     database.query(sql, params, (error, results, fields) => {
       if (error) {
         throw new Error(error);

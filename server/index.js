@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const routes = require('./controler');
 const config = require('./config');
+const jwtauth = require('./middleware/jwtauth');
 
 const app = express();
 
@@ -9,6 +10,7 @@ config.database.connect();
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
 app.all('*', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With');
@@ -20,6 +22,8 @@ app.all('*', (req, res, next) => {
     next();
   }
 });
+
+app.use(jwtauth);
 
 routes(app);
 
