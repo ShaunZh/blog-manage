@@ -4,7 +4,6 @@ const database = require('../config/').database;
 const email = require('../utils/email');
 const utils = require('../utils/functions');
 
-
 const router = express.Router();
 
 /**
@@ -143,11 +142,10 @@ router.get('/', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
-    if (!_.isString(req.params.username)) {
+    if (!_.isString(req.params.id)) {
       throw new Error('用户名不能为空');
     }
-    console.log('aaaa');
-    const sql = `SELECT ID FROM WEB_USER WHERE USERNAME = ${req.params.username}`;
+    const sql = `SELECT ID FROM WEB_USER WHERE USERNAME = '${req.params.id}'`;
     database.query(sql, (error, results, fields) => {
       if (error) {
         throw new Error(error);
@@ -233,9 +231,6 @@ router.post('/', (req, res) => {
           // 产生随机的6位校验码
           const checkCode = Math.floor(Math.random() * 1000000);
           const newDate = new Date();
-          const accessToken = jwt.sign({ username }, tokenSecret, {
-            expiresIn: '7 days',
-          });
           // 在此处插入一条用户信息
           const userData = {
             ID: utils.getUuid(),
@@ -258,7 +253,7 @@ router.post('/', (req, res) => {
             sendActiveEmail(username, emailAddr, checkCode, () => {
               res.send(JSON.stringify({
                 status: 200,
-                msg: '验证码已发送',
+                msg: '注册成功',
               }));
             });
           });

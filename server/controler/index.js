@@ -5,4 +5,5 @@ module.exports = function (app) {
   app.use('/login', require('./login.js'));
   app.use('/activeAccount', require('./activeAccount.js')); // 激活账号接口
   app.use('/getAccessToken', require('./getAccessToken.js')); // 获取访问token接口
+  app.use('/verifyEmail', require('./verifyEmail.js')); // 校验邮箱是否已注册
 };

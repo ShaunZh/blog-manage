@@ -25,5 +25,14 @@ const utils = {
     }
     return (`${year}-${month}-${day} ${hour}:${minute}`);
   },
+  /**
+   * @description 检查邮箱
+   * @param
+   * @return
+   */
+  verifyEmail(emailAddr) {
+    const reg = /^[a-z0-9]+([._\\-]*[a-z0-9])*@([a-z0-9]+[-a-z0-9]*[a-z0-9]+\.){1,63}[a-z0-9]+$/;
+    return reg.test(emailAddr);
+  },
 };
 export default utils;

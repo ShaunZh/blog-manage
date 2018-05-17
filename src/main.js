@@ -7,6 +7,7 @@ import 'element-ui/lib/theme-chalk/index.css';
 
 import App from './App';
 import router from './router';
+import appConfig from './config/appConfig';
 
 
 require('@/assets/css/base.css');
@@ -19,6 +20,8 @@ Vue.prototype.$confirm = MessageBox.confirm;
 Vue.prototype.$prompt = MessageBox.prompt;
 Vue.prototype.$message = Message;
 Vue.prototype.$notify = Notification;
+
+Vue.prototype.$appConfig = appConfig;
 
 /* eslint-disable no-new */
 new Vue({
