@@ -15,18 +15,26 @@
               <label for="login-username" class="col-4 text-right">用户名: </label>
               <input type="text" id="login-username" class="col-8" min="6" max="24"
                      placeholder="请输入用户名"
+                     required
                      v-model="loginUsername">
             </div>
             <div class="form-group row mx-0 mb-3">
               <label for="login-password" class="col-4 text-right">密码:</label>
               <input type="password" id="login-password" class="col-8" min="6" max="24"
                      placeholder="请输入密码"
+                     required
                      v-model="loginPassword">
+            </div>
+            <div class="form-group ">
+              <input type="checkbox" class="form-check-input" id="rememberPassword" v-model="isRememberPassword">
+              <label class="form-check-label" style="font-size: 80%" for="rememberPassword">记住密码</label>
+              <a href="" style="font-size: 80%" class="text-info">忘记密码</a>
             </div>
             <div class="form-group row">
               <button type="submit" class="btn btn-block btn-primary text-center col-6 offset-4"
                       @click.stop="submitLogin">登录</button>
             </div>
+            <div class="ml-5 pl-5 text-info" style="font-size: 80%; " v-show="dispActiveInfo">账号尚未激活，重新发送激活链接，请点击<a href="#" @click.prevent.stop="getActiveLink">此处</a> </div>
           </div>
           <div v-else>
             <div class="form-group row mx-0 mb-3">
@@ -104,9 +112,22 @@ export default {
         loginPassword: '', // 登录密码
       },
       disabledRegister: true,
+      dispActiveInfo: false, // 显示激活信息
+      activeLink: '', // 账号激活链接
+      userInfo: {},
+      isRememberPassword: false, // 是否记住密码
     };
   },
   watch: {
+  },
+  created() {
+    const username = localStorage.getItem('username');
+    const password = localStorage.getItem('password');
+    if (!(username == undefined && password == undefined)) {
+      this.loginUsername = username == undefined ? '' : username;
+      this.loginPassword = password == undefined ? '' : password;
+      this.isRememberPassword = true;
+    }
   },
   methods: {
     /**
@@ -191,12 +212,113 @@ export default {
       }
     },
     /**
+     * @description 保存accessToken到localStorage中
+     * @param
+     * @return
+     */
+    saveAccessToken(accessToken) {
+      localStorage.setItem('accessToken', accessToken);
+    },
+    /**
+     * @description 获取激活链接
+     * @param
+     * @return
+     */
+    getActiveLink() {
+      axios({
+        method: 'POST',
+        url: this.$appConfig.api.login.sendActiveEmail,
+        data: JSON.stringify({
+          username: this.loginUsername,
+        }),
+        headers: { 'Content-Type': 'application/json'},
+      })
+        .then((response) => {
+          if (response.data.status === 200) {
+            this.$message({
+              type: 'success',
+              message: '发送激活链接成功',
+            });
+          } else {
+            this.$message({
+              type: 'error',
+              message: response.data.msg,
+            });
+          }
+        });
+    },
+    /**
      * @description 登录
      * @param
      * @return
      */
     submitLogin() {
-
+      // 1. 登录
+      axios({
+        method: 'POST',
+        url: this.$appConfig.api.login.into,
+        data: JSON.stringify({
+          username: this.loginUsername,
+          password: this.loginPassword,
+        }),
+      })
+        .then((response) => {
+          if (response.data.status === 400) {
+            throw new Error(response.data.msg);
+          } else if (response.data.status === 202) {
+            // 账号未激活
+            this.dispActiveInfo = true;
+          } else {
+            // 账号已激活, 保存用户信息
+            Object.assign(this.userInfo, response.data.data);
+            // 登录成功, 则获取token信息
+            axios({
+              method: 'POST',
+              url: this.$appConfig.api.login.getAccessToken,
+              data: JSON.stringify({
+                username: this.loginUsername,
+                password: this.loginPassword,
+              }),
+            })
+              .then((response2) => {
+                if (response2.data.status === 200) {
+                  // 账号已激活
+                  if (response2.data.data.accessToken !== '') {
+                    // 保存token到localstorage中
+                    this.saveAccessToken(response2.data.data.accessToken);
+                    // 记住密码
+                    if (this.isRememberPassword) {
+                      localStorage.setItem('username', this.loginUsername);
+                      localStorage.setItem('password', this.loginPassword);
+                    } else {
+                      // 没有记住密码
+                      localStorage.removeItem('username');
+                      localStorage.removeItem('password');
+                    }
+                    this.$message({
+                      type: 'success',
+                      message: '登录成功',
+                    });
+                  } else {
+                    // 账号未激活
+                    this.dispActiveInfo = true;
+                  }
+                }
+              })
+              .catch((error2) => {
+                this.$message({
+                  type: 'error',
+                  message: error2.message,
+                });
+              });
+          }
+        })
+        .catch((error) => {
+          this.$message({
+            type: 'error',
+            message: error.message,
+          });
+        });
     },
     /**
      * @description 注册
@@ -207,11 +329,10 @@ export default {
       if (this.tips.registerUsername.length || this.tips.registerPassword.length ||
         this.tips.registerConfirmPassword.length || this.tips.registerEmail.length) {
         this.$message({
-          type: 'info',
+          type: 'error',
           message: '请填写完整信息',
         });
       } else {
-        debugger
         axios({
           url: this.$appConfig.api.users.register,
           method: 'POST',
