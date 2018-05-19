@@ -40,7 +40,7 @@ const jwtauth = (req, res, next) => {
     } else {
       // 无法获取token
       res.send(JSON.stringify({
-        status: 400,
+        status: 406,
         msg: 'token为空，请重新获取token',
       }));
     }
