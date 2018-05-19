@@ -16,7 +16,7 @@ router.get('/', (req, res) => {
     const data = req.query;
     let limit = 5;
     let offset = 0;
-    let sql = `SELECT ID, TITLE, AUTHOR, ABSTRACT, CREATE_TIME, TAG_ID FROM WEB_ARTICLE `;
+    let sql = `SELECT ID, TITLE, USER_ID, ABSTRACT, CREATE_TIME, TAG_ID FROM WEB_ARTICLE `;
     // 判断传入的参数
     if (_.isObject(data)) {
       // 是否返回指定tag的文章列表
@@ -40,7 +40,7 @@ router.get('/', (req, res) => {
           id: item.ID,
           tagId: item.TAG_ID,
           title: item.TITLE,
-          author: item.AUTHOR,
+          // author: item.AUTHOR,
           abstract: item.ABSTRACT,
           createTime: item.CREATE_TIME,
           modifyTime: item.MODIFY_TIME,
@@ -77,7 +77,7 @@ router.get('/:id', (req, res) => {
     if (req.params.id === '') {
       throw new Error('id不能为空字符串');
     }
-    const sql = `SELECT ID, TITLE, AUTHOR, CREATE_TIME, CONTENT FROM WEB_ARTICLE WHERE ID = "${req.params.id}";`;
+    const sql = `SELECT ID, TITLE, USER_ID, CREATE_TIME, CONTENT FROM WEB_ARTICLE WHERE ID = "${req.params.id}";`;
     database.query(sql, (error, results, fields) => {
       if (error) {
         throw new Error(error);
@@ -85,7 +85,7 @@ router.get('/:id', (req, res) => {
       const items = (JSON.parse(JSON.stringify(results))).map((item) => {
         return {
           id: item.ID,
-          author: item.AUTHOR,
+          // author: item.AUTHOR,
           content: item.CONTENT,
           title: item.TITLE,
           createTime: item.CREATE_TIME,
@@ -121,16 +121,18 @@ router.post('/', (req, res) => {
     if (_.isNull(data)) {
       throw new Error('参数不能为null');
     }
+    const userId = req.userInfo.userId;
     const sql = 'INSERT INTO WEB_ARTICLE SET ?';
     const params = {
       ID: utils.getUuid(), // id
       TAG_ID: data.tagId, // tag id
       CREATE_TIME: data.createTime, // 创建时间
-      AUTHOR: data.author, // 作者
       TITLE: data.title, // 标题
       CONTENT: data.content, // 正文
       ABSTRACT: data.abstract, // 介绍
       IS_PUBLISH: data.isPublish, // 是否发布
+      USER_ID: userId,
+      MODIFY_TIME: data.modifyTime == undefined ? null : data.modifyTime,
     };
     database.query(sql, params, (error, results, fields) => {
       if (error) {
@@ -172,13 +174,14 @@ router.put('/', (req, res) => {
     }
     let sql = 'UPDATE WEB_ARTICLE SET ';
     let params = [];
+    const userId = req.userInfo.userId;
     if (!_.isUndefined(data.title) && data.title !== '') {
       sql += 'TITLE = ?, ';
       params.push(data.title);
     }
-    if (!_.isUndefined(data.author) && data.author !== '') {
-      sql += 'AUTHOR = ?, ';
-      params.push(data.author);
+    if (!_.isUndefined(userId) && userId !== '') {
+      sql += 'USER_ID= ?, ';
+      params.push(userId);
     }
     if (!_.isUndefined(data.modifyTime) && data.modifyTime !== '') {
       sql += 'MODIFY_TIME = ?, ';
