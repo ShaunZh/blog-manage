@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 
 app.all('*', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With');
+  res.header('Access-Control-Allow-Headers', 'Content-Type,Content-Length, Authorization, Accept,X-Requested-With, x-access-token');
   res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, OPTIONS');
   res.header('X-Powered-By', ' 3.2.1');
   if (req.method === 'OPTIONS') {
