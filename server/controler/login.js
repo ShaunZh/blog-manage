@@ -6,20 +6,56 @@ const email = require('../utils/email');
 const router = express.Router();
 
 /**
- * @description 注册用户
+ * @description 登录
  * @param
  * @return
  */
-router.post('/up', (req, res) => {
+router.post('/into', (req, res) => {
   try {
-    const username = req.query.username;
-    const password = req.qurey.password;
+    const username = req.body.username;
+    const password = req.body.password;
     if (_.isEmpty(username)) {
       throw new Error('请输入用户名');
     }
     if (_.isEmpty(password)) {
       throw new Error('请输入密码');
     }
+    const sql = `SELECT ID AS id, USERNAME AS username, PASSWORD AS password, MOBILE AS mobile, 
+      HEAD_IMG AS headImg, CREATE_TIME AS createTime, EMAIL AS email, 
+      IS_ACTIVE AS isActive, ACCESS_TOKEN AS accessToken FROM WEB_USER WHERE USERNAME = '${username}';`;
+    database.query(sql, (error, results, fields) => {
+      try {
+        if (error) {
+          throw new Error(error.message);
+        }
+        if (results.length === 0) {
+          throw new Error('用户不存在');
+        } else {
+          if (password !== results[0].password) {
+            throw new Error('密码错误');
+          }
+          if (results[0].isActive) { // 如果用户已激活
+            res.send(JSON.stringify({
+              status: 200,
+              msg: '登录成功',
+              data: results[0],
+            }));
+          } else { // 用户未激活
+            res.send(JSON.stringify({
+              status: 202,
+              msg: '用户未激活',
+              data: results[0],
+            }));
+          }
+        }
+      } catch (e) {
+        res.send(JSON.stringify({
+          status: 400,
+          msg: e.message,
+          data: null,
+        }));
+      }
+    });
   } catch (e) {
     res.send(JSON.stringify({
       status: 400,
