@@ -299,6 +299,7 @@ export default {
                       type: 'success',
                       message: '登录成功',
                     });
+                    this.$router.replace({ name: 'Index' });
                   } else {
                     // 账号未激活
                     this.dispActiveInfo = true;

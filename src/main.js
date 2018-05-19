@@ -26,6 +26,31 @@ Vue.prototype.$appConfig = appConfig;
 axios.defaults.headers = {
   'Content-Type': 'application/json',
 };
+// Add a request interceptor
+axios.interceptors.request.use((config) => {
+  // Do something before request is sent
+  const token = localStorage.getItem('accessToken');
+  if (token == undefined) {
+    delete config.headers['x-access-token'];
+  } else {
+    config.headers['x-access-token'] = localStorage.getItem('accessToken');
+  }
+  return config;
+}, (error) => {
+  // Do something with request error
+  return Promise.reject(error);
+});
+
+axios.interceptors.response.use((response) => {
+  if (response.data.status === 406) {
+    router.replace({name: 'Login'});
+    return;
+  }
+  return response;
+}, (error) => {
+  // Do something with response error
+  return Promise.reject(error);
+});
 
 /* eslint-disable no-new */
 new Vue({
