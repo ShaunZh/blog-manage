@@ -1,5 +1,5 @@
 const express = require('express');
-const _ = require('../utils/underscroe');
+const _ = require('../utils/lodash');
 const database = require('../config').database;
 const tokenSecret = require('../config').tokenSecret;
 const jwt = require('jsonwebtoken');
