@@ -225,6 +225,76 @@ router.post('/', (req, res) => {
     }));
   }
 });
+
+/**
+ * @description 在编辑文章时，自动保存文章到WEB_HISTORY_ARTICLE中
+ * @param
+ * @return
+ */
+router.post('/autoSave', (req, res) => {
+  try {
+    const data = req.body;
+    if (!_.isObject(data)) {
+      throw new Error('参数必须是一个对象');
+    }
+    if (_.isNull(data)) {
+      throw new Error('参数不能为null');
+    }
+    const historyArticleSql = 'INSERT INTO WEB_HISTORY_ARTICLE SET ? ';
+    const historyArticleParams = {
+      ID: utils.getUuid(),
+      ARTICLE_ID: data.id,
+      CREATE_TIME: data.createTime,
+      TITLE: data.title,
+      ABSTRACT: data.abstract,
+      CONTENT: data.content,
+    };
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
+      }
+      database.query(`SELECT ID FROM WEB_HISTORY_ARTICLE WHERE ARTICLE_ID = '${data.id}' ORDER BY CREATE_TIME DESC;`, (error, results, fields) => {
+        if (error) {
+          return database.rollback(() => {
+            throw error;
+          });
+        }
+        // 历史记录最多保持30条, 如果等于30，则删除最早的一条
+        if (results.length >= 30) {
+          database.query(`DELETE FROM WEB_HISTORY WHERE ID = '${results[-1].ID}';`, (error2, results2, fields) => {
+            if (error2) {
+              return database.rollback(() => {
+                throw error2;
+              });
+            }
+          });
+        }
+        database.query(historyArticleSql, historyArticleParams, (error2, results2, fields) => {
+          if (error2) {
+            throw new Error(error2.message);
+          }
+          database.commit((err2) => {
+            if (err2) {
+              return database.rollback(() => {
+                throw err2;
+              });
+            }
+            res.send(JSON.stringify({
+              status: 200,
+              msg: '保存成功',
+            }));
+          });
+        });
+      });
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      status: 400,
+      msg: e.message,
+    }));
+  }
+});
+
 /**
  * @description 更新文章
  * @param
@@ -244,14 +314,9 @@ router.put('/', (req, res) => {
     }
     let sql = 'UPDATE WEB_ARTICLE SET ';
     let params = [];
-    const userId = req.userInfo.userId;
     if (!_.isUndefined(data.title) && data.title !== '') {
       sql += 'TITLE = ?, ';
       params.push(data.title);
-    }
-    if (!_.isUndefined(userId) && userId !== '') {
-      sql += 'USER_ID= ?, ';
-      params.push(userId);
     }
     if (!_.isUndefined(data.modifyTime) && data.modifyTime !== '') {
       sql += 'MODIFY_TIME = ?, ';
@@ -315,17 +380,31 @@ router.delete('/', (req, res) => {
     if (_.isEmpty(data.id)) {
       throw new Error('id不能为空');
     }
-    const sql = `DELETE FROM WEB_ARTICLE WHERE ID = "${data.id}"`;
-    database.query(sql, (error, results, fields) => {
-      if (error) {
-        throw new Error(error);
+    const sql = `DELETE FROM WEB_ARTICLE WHERE ID = '${data.id}'`;
+    const historySql = `DELETE FROM WEB_HISTORY_ARTICLE WHERE ARTICLE_ID = '${data.id}';`;
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
       }
-      res.send(JSON.stringify({
-        status: 200,
-        data: null,
-        msg: '删除成功',
-      }));
-    });
+      database.query(sql, (error, results, fields) => {
+        if (error) {
+          return database.rollback(() => {
+            throw error;
+          });
+        }
+        database.query(historySql, (error2, results2, fields2) => {
+          if (error2) {
+            return database.rollback(() => {
+              throw error2;
+            });
+          }
+          res.send(JSON.stringify({
+            status: 200,
+            msg: '删除成功',
+          }));
+        });
+      });
+    })
   } catch (e) {
     res.send(JSON.stringify({
       status: 400,
