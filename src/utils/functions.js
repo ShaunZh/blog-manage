@@ -10,7 +10,8 @@ const utils = {
     let month = date.getMonth() + 1;
     let day = date.getDate();
     let hour = date.getHours();
-    let minute = date.getHours();
+    let minute = date.getMinutes();
+    let second = date.getSeconds();
     if (month < 10) {
       month = `0${month}`;
     }
@@ -23,7 +24,10 @@ const utils = {
     if (minute < 10) {
       minute = `0${minute}`;
     }
-    return (`${year}-${month}-${day} ${hour}:${minute}`);
+    if (second < 10) {
+      second = `0${second}`;
+    }
+    return (`${year}-${month}-${day} ${hour}:${minute}:${second}`);
   },
   /**
    * @description 检查邮箱
