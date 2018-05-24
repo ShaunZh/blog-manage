@@ -2,80 +2,83 @@
   <div class="page-index">
     <div class="row no-gutters">
       <div class="col-2">
-        <TagsSetting :tagsList="tagsList" @getNewTag="getNewTag"
-                     @changeTag="changeTag"
-                     @deleteTag="deleteTag"
-                     @updateTag="updateTag"
-        ></TagsSetting>
+        <Notebooks :notebooksList="notebooksList" @getNewNotebook="getNewNotebook"
+                   @changeNotebook="changeNotebook"
+                   @deleteNotebook="deleteNotebook"
+                   @updateNotebook="updateNotebook"
+        >
+        </Notebooks>
       </div>
       <div class="col-3">
-        <ArticlesList :articlesList="articlesList"
-                      @submitAddArticle="submitAddArticle"
-                      @deleteArticle="deleteArticle"
-                      @switchArticle="getArticle"
+        <NotesList :notesList="notesList"
+                   @submitAddNote="submitAddNote"
+                   @deleteNote="deleteNote"
+                   @switchNote="getNote"
         >
-        </ArticlesList>
+        </NotesList>
       </div>
       <div class="col-7">
-        <ArticleDetails :articleInfo="articleInfo"
-                        @submitAddArticle="submitAddArticle"
-                        @publish="publishArticle"
-        ></ArticleDetails>
+        <NoteDetails :noteInfo="noteInfo"
+                     @submitAddNote="submitAddNote"
+                     @publish="publishNote"
+                     @autoSaveNote="autoSaveNote"
+        >
+        </NoteDetails>
       </div>
     </div>
   </div>
 </template>
 
 <script type="es6">
-import TagsSetting from '@/components/tags-setting';
-import ArticleDetails from '@/components/article-details';
-import ArticlesList from '@/components/articles-list';
+import Notebooks from '@/components/notebooks';
+import NoteDetails from '@/components/notes-details';
+import NotesList from '@/components/notes-list';
 import axios from 'axios';
 import utils from '@/utils/functions';
 
 export default {
   components: {
-    TagsSetting,
-    ArticleDetails,
-    ArticlesList,
+    Notebooks,
+    NoteDetails,
+    NotesList,
   },
   data() {
     return {
-      tagsList: [], // 文集列表
-      articlesList: [], // 文章列表
-      currentTagIndex: null, // 当前标签索引
-      currentArticleIndex: null, // 当前文章索引
-      articleInfo: null, // 当前选中的文章信息
+      notebooksList: [], // 文集列表
+      notesList: [], // 文章列表
+      currentNotebookIndex: null, // 当前标签索引
+      currentNoteIndex: null, // 当前文章索引
+      noteInfo: null, // 当前选中的文章信息
     };
   },
   created() {
-    this.getTagsList();
+    this.getNotebooksList();
   },
   watch: {
-    currentTagIndex() {
-      this.getArticlesList();
+    currentNotebookIndex() {
+      this.getNotesList();
     },
-    currentArticleIndex(newValue) {
-      if (typeof newValue === 'number' && this.articlesList.length
-        && this.articlesList[newValue] !== undefined) {
-        this.getArticle(newValue);
+    currentNoteIndex(newValue) {
+      if (typeof newValue === 'number' && this.notesList.length
+        && this.notesList[newValue] !== undefined) {
+        this.getNote(newValue);
       } else {
-        this.articleInfo = null;
+        this.noteInfo = null;
       }
     },
   },
   methods: {
     /**
-     * @description 获取标签列表
+     * @description 获取笔记本列表
      * @param
      * @return
      */
-    getTagsList() {
-      axios.get('http://127.0.0.1:3000/tags')
+    getNotebooksList() {
+      axios.get(this.$appConfig.api.notebooks.list)
         .then((response) => {
           if (response.data.status === 200 && response.data.data.items !== undefined) {
-            this.tagsList = response.data.data.items;
-            this.currentTagIndex = 0;
+            this.notebooksList = response.data.data.items;
+            this.currentNotebookIndex = 0;
           } else {
             console.error(response.data.msg);
           }
@@ -89,18 +92,18 @@ export default {
      * @param
      * @return
      */
-    getArticlesList() {
-      if (this.tagsList[this.currentTagIndex] !== undefined) {
+    getNotesList() {
+      if (this.notebooksList[this.currentNotebookIndex] !== undefined) {
         axios({
-          url: `http://127.0.0.1:3000/articles?tagId=${this.tagsList[this.currentTagIndex].id}`,
+          url: `${this.$appConfig.api.notes.list}?notebookId=${this.notebooksList[this.currentNotebookIndex].id}`,
           method: 'GET',
         })
           .then((response) => {
             if (response.data.status === 200 && response.data.data.items !== undefined) {
-              // todo : isDispSetting 是用于控制显示设置信息的开关，不应该在此处放在articlesList中，应该放在aritcls-list.vue中
-              this.articlesList = response.data.data.items.map(item =>
+              // todo : isDispSetting 是用于控制显示设置信息的开关，不应该在此处放在notesList中，应该放在aritcls-list.vue中
+              this.notesList = response.data.data.items.map(item =>
                 Object.assign({}, item, {isDispSetting: false}));
-              this.currentArticleIndex = this.articlesList.length ? 0 : null;
+              this.currentNoteIndex = this.notesList.length ? 0 : null;
             } else {
               throw new Error(response.data.msg);
             }
@@ -115,16 +118,16 @@ export default {
      * @param
      * @return
      */
-    getArticle(index) {
-      let articleId = '';
-      if (this.articlesList[index] !== undefined) {
-        articleId = this.articlesList[index].id;
-        axios.get(`http://127.0.0.1:3000/articles/${articleId}`)
+    getNote(index) {
+      let noteId = '';
+      if (this.notesList[index] !== undefined) {
+        noteId = this.notesList[index].id;
+        axios.get(`${this.$appConfig.api.notes.get}/${noteId}`)
           .then((response) => {
             if (response.data.status === 200 &&
-              response.data.data.items !== undefined &&
-              response.data.data.items.length) {
-              this.articleInfo = response.data.data.items[0];
+              response.data.data !== undefined) {
+              this.noteInfo = response.data.data;
+              this.currentNoteIndex = index;
             } else {
               throw new Error(response.data.msg);
             }
@@ -139,15 +142,15 @@ export default {
      * @param
      * @return
      */
-    getNewTag(newTag) {
-      this.tagsList.push(newTag);
+    getNewNotebook(newNotebook) {
+      this.notebooksList.push(newNotebook);
     },
     /**
      * @description 添加文章
      * @param
      * @return
      */
-    addArticle(status) {
+    addNote(status) {
       if (status === 'success') {
         console.info('添加文章成功');
       } else {
@@ -155,29 +158,29 @@ export default {
       }
     },
     /**
-     * @description 改变当前选中的tag
+     * @description 改变当前选中的notebook
      * @param
      * @return
      */
-    changeTag(tagIndex) {
-      this.currentTagIndex = tagIndex;
+    changeNotebook(notebookIndex) {
+      this.currentNotebookIndex = notebookIndex;
     },
     /**
-     * @description 更新tag
+     * @description 更新notebook
      * @param
      * @return
      */
-    updateTag(tagIndex, newName) {
+    updateNotebook(notebookIndex, newName) {
       console.log(utils.getDate());
       const data = {
-        id: this.tagsList[tagIndex].id,
+        id: this.notebooksList[notebookIndex].id,
         name: newName,
         modifyTime: utils.getDate(),
       };
       axios({
-        url: 'http://127.0.0.1:3000/tags',
+        url: this.$appConfig.api.notebooks,
         method: 'PUT',
-        data: data,
+        data,
       })
         .then((response) => {
           if (response.status === 200) {
@@ -185,9 +188,9 @@ export default {
               type: 'success',
               message: '更新成功',
             });
-            this.tagsList.splice(tagIndex, 1, data);
-            // this.tagsList[tagIndex] = Object.assign({}, this.tagsList[tagIndex], {name: newName});
-            // this.tagsList[tagIndex].name = newName;
+            this.notebooksList.splice(notebookIndex, 1, data);
+            // this.notebooksList[notebookIndex] = Object.assign({}, this.notebooksList[notebookIndex], {name: newName});
+            // this.notebooksList[notebookIndex].name = newName;
           } else {
             throw new Error(response.msg);
           }
@@ -203,40 +206,36 @@ export default {
      * @description 添加文章
      * @param {isPublish}Boolean —— true: 未发表， false：发表
      *        {sort}number —— 1：文章排在文集的最前面；-1：文章排在文集的最后面
-     *        {articleInfo}object —— 文章信息
+     *        {noteInfo}object —— 文章信息
      * @return
      */
-    submitAddArticle(isPublish, sort, articleInfo) {
+    submitAddNote(isPublish, sort, noteInfo) {
       let title = '';
       let content = '';
       // 当文章信息为undefined时，设置文章标题为日期
-      if (articleInfo === undefined) {
+      if (noteInfo === undefined) {
         title = utils.getDate().substr(0, 10);
         content = '';
       } else {
-        title = articleInfo.title;
-        content = articleInfo.content;
+        title = noteInfo.title;
+        content = noteInfo.content;
       }
-      debugger
-      const articleData = {
+      const noteData = {
         title,
-        tagId: this.tagsList[this.currentTagIndex].id,
-        authod: '大丸子',
+        notebookId: this.notebooksList[this.currentNotebookIndex].id,
         createTime: utils.getDate(),
         content,
-        isPublish: isPublish || false,
         sort,
       };
       axios({
-        url: 'http://127.0.0.1:3000/articles',
+        url: this.$appConfig.api.notes.autoSave,
         method: 'POST',
-        data: JSON.stringify(articleData),
-        headers: {'Content-Type': 'application/json'},
+        data: JSON.stringify(noteData),
       })
         .then((response) => {
           if (response.data.status === 200) {
-            this.articlesList.push(Object.assign(articleData, { id: response.data.data.id, isDispSetting: false }));
-            this.currentArticleIndex = this.articlesList.length - 1;
+            this.notesList.push(Object.assign(noteData, { id: response.data.data.id, isDispSetting: false }));
+            this.currentNoteIndex = this.notesList.length - 1;
             this.$message({
               type: 'success',
               message: '添加文章成功!',
@@ -250,22 +249,21 @@ export default {
         });
     },
     /**
-     * @description 删除tag及其下面的文章
+     * @description 删除notebook及其下面的文章
      * @param
      * @return
      */
-    deleteTag(index) {
+    deleteNotebook(index) {
       axios({
-        url: 'http://127.0.0.1:3000/tags',
+        url: this.$appConfig.api.notebooks,
         method: 'DELETE',
         data: JSON.stringify({
-          id: this.tagsList[index].id,
+          id: this.notebooksList[index].id,
         }),
-        headers: {'Content-Type': 'application/json'},
       })
         .then((response) => {
           if (response.data.status === 200) {
-            this.tagsList.splice(index, 1);
+            this.notebooksList.splice(index, 1);
             this.$message({
               type: 'success',
               message: '删除成功!',
@@ -283,18 +281,17 @@ export default {
      * @param
      * @return
      */
-    deleteArticle(index) {
+    deleteNote(index) {
       axios({
-        url: 'http://127.0.0.1:3000/articles',
+        url: this.$appConfig.api.notes,
         method: 'DELETE',
         data: JSON.stringify({
-          id: this.articlesList[index].id,
+          id: this.notesList[index].id,
         }),
-        headers: {'Content-Type': 'application/json'},
       })
         .then((response) => {
           if (response.data.status === 200) {
-            this.articlesList.splice(index, 1);
+            this.notesList.splice(index, 1);
             this.$message({
               type: 'success',
               message: '删除成功!',
@@ -312,57 +309,37 @@ export default {
     /**
      * @description 发布文章
      * @param {isPublish}Boolean —— true：发布，false：撤销发布
-     *        {articleInfo}Object —— 发布的文章信息
+     *        {noteInfo}Object —— 发布的文章信息
      * @return
      */
-    publishArticle(isPublish, articleInfo) {
-      // 发布文章
-      if (isPublish) {
-        axios({
-          url: 'http://127.0.0.1:3000/articles',
-          method: 'UPDATE',
-          data: JSON.stringify({
-            id: this.articlesList[this.currentArticleIndex].id,
-            isPublish: false,
-          }),
-          headers: { 'Content-Type': 'applcation/json' },
+    publishNote(noteInfo) {
+      axios({
+        url: this.$appConfig.api.notes.update,
+        method: 'PUT',
+        data: JSON.stringify(noteInfo),
+      })
+        .then((response) => {
+          if (response.data.status === 200) {
+            Object.assign(this.notesList[this.currentNoteIndex], noteInfo);
+          } else {
+            throw new Error(response.data.message);
+          }
         })
-          .then((response) => {
-            if (response.data.status === 200) {
-              this.articlesList[this.currentArticleIndex] = Object.assign(articleInfo, { isPublish: true });
-            } else {
-              throw new Error(response.data.message);
-            }
-          })
-          .catch((error) => {
-            this.$notify.error({
-              message: `发布失败：${error.message}`,
-            });
+        .catch((error) => {
+          this.$notify.error({
+            message: error.message,
           });
-      } else {
-        // 撤销发布
-        axios({
-          url: 'http://127.0.0.1:3000/articles',
-          method: 'UPDATE',
-          data: JSON.stringify({
-            id: this.articlesList[this.currentArticleIndex].id,
-            isPublish: false,
-          }),
-          headers: { 'Content-Type': 'applcation/json' },
-        })
-          .then((response) => {
-            if (response.data.status === 200) {
-              this.articlesList[this.currentArticleIndex].isPublish = false;
-            } else {
-              throw new Error(response.data.message);
-            }
-          })
-          .catch((error) => {
-            this.$notify.error({
-              message: `撤销失败：${error.message}`,
-            });
-          });
-      }
+        });
+    },
+    /**
+     * @description 自动保存
+     * @param
+     * @return
+     */
+    autoSaveNote(noteInfo) {
+      debugger
+      Object.assign(this.notesList[this.currentNoteIndex], noteInfo);
+
     },
   },
 };
@@ -374,13 +351,13 @@ export default {
     > .row {
       height: inherit;
     }
-    .article-list .item {
+    .note-list .item {
       &:hover {
         cursor: pointer;
         background: #ccc;
       }
     }
-    .add-article {
+    .add-note {
       &:hover {
         cursor: pointer;
       }
