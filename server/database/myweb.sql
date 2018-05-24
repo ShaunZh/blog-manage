@@ -16,16 +16,16 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `WEB_ARTICLE`
+-- Table structure for table `WEB_NOTE`
 --
 
-DROP TABLE IF EXISTS `WEB_ARTICLE`;
+DROP TABLE IF EXISTS `WEB_NOTE`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `WEB_ARTICLE` (
+CREATE TABLE `WEB_NOTE` (
   `ID` varchar(50) CHARACTER SET utf8 NOT NULL,
   `TITLE` text CHARACTER SET utf8,
-  `TAG_ID` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `NOTEBOOK_ID` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `AUTHOR` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `ABSTRACT` text CHARACTER SET utf8,
   `CREATE_TIME` datetime DEFAULT NULL,
@@ -36,23 +36,23 @@ CREATE TABLE `WEB_ARTICLE` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `WEB_ARTICLE`
+-- Dumping data for table `WEB_NOTE`
 --
 
-LOCK TABLES `WEB_ARTICLE` WRITE;
-/*!40000 ALTER TABLE `WEB_ARTICLE` DISABLE KEYS */;
-INSERT INTO `WEB_ARTICLE` VALUES ('11121212','æ ‡é¢˜äºŒ','324rg','è‹¹æžœ','ç¬¬äºŒç¯‡æ–‡ç« ',NULL,NULL,NULL),('213er','æ ‡é¢˜ä¸‰','324rg','å¼ å°è™¾','ç¬¬ä¸€ç¯‡æ–‡ç« ',NULL,NULL,NULL),('wdf12er','123ergf','123ergf','123ergb','23erg','2018-01-23 23:07:09','2018-01-23 23:07:15',NULL);
-/*!40000 ALTER TABLE `WEB_ARTICLE` ENABLE KEYS */;
+LOCK TABLES `WEB_NOTE` WRITE;
+/*!40000 ALTER TABLE `WEB_NOTE` DISABLE KEYS */;
+INSERT INTO `WEB_NOTE` VALUES ('11121212','æ ‡é¢˜äºŒ','324rg','è‹¹æžœ','ç¬¬äºŒç¯‡æ–‡ç« ',NULL,NULL,NULL),('213er','æ ‡é¢˜ä¸‰','324rg','å¼ å°è™¾','ç¬¬ä¸€ç¯‡æ–‡ç« ',NULL,NULL,NULL),('wdf12er','123ergf','123ergf','123ergb','23erg','2018-01-23 23:07:09','2018-01-23 23:07:15',NULL);
+/*!40000 ALTER TABLE `WEB_NOTE` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `WEB_TAG`
+-- Table structure for table `WEB_NOTEBOOK`
 --
 
-DROP TABLE IF EXISTS `WEB_TAG`;
+DROP TABLE IF EXISTS `WEB_NOTEBOOK`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `WEB_TAG` (
+CREATE TABLE `WEB_NOTEBOOK` (
   `ID` varchar(255) CHARACTER SET utf8 NOT NULL,
   `NAME` varchar(255) CHARACTER SET gbk NOT NULL DEFAULT '',
   `CREATE_TIME` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
@@ -62,13 +62,13 @@ CREATE TABLE `WEB_TAG` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `WEB_TAG`
+-- Dumping data for table `WEB_NOTEBOOK`
 --
 
-LOCK TABLES `WEB_TAG` WRITE;
-/*!40000 ALTER TABLE `WEB_TAG` DISABLE KEYS */;
-INSERT INTO `WEB_TAG` VALUES ('324rg','书法','2018-01-21',NULL),('885f3b80-ffdc-11e7-8708-37920abb219d','有用','2018-01-21',NULL),('9727d420-ffdb-11e7-8708-37920abb219d','吃饭','2018-01-21',NULL),('da233ed0-0040-11e8-aa6c-d176fd6e440f','更新标签',NULL,NULL);
-/*!40000 ALTER TABLE `WEB_TAG` ENABLE KEYS */;
+LOCK TABLES `WEB_NOTEBOOK` WRITE;
+/*!40000 ALTER TABLE `WEB_NOTEBOOK` DISABLE KEYS */;
+INSERT INTO `WEB_NOTEBOOK` VALUES ('324rg','书法','2018-01-21',NULL),('885f3b80-ffdc-11e7-8708-37920abb219d','有用','2018-01-21',NULL),('9727d420-ffdb-11e7-8708-37920abb219d','吃饭','2018-01-21',NULL),('da233ed0-0040-11e8-aa6c-d176fd6e440f','更新标签',NULL,NULL);
+/*!40000 ALTER TABLE `WEB_NOTEBOOK` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

@@ -13,7 +13,7 @@ const database = require('../config').database; // 引入数据库
  */
 router.get('/', (req, res) => {
   const userId = req.userInfo.userId;
-  database.query(`SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_TAG WHERE USER_ID = '${userId}' ORDER BY CREATE_TIME`, (error, results, fields) => {
+  database.query(`SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_NOTEBOOK WHERE USER_ID = '${userId}' ORDER BY CREATE_TIME`, (error, results, fields) => {
     if (error) {
       throw new Error(error);
     }
@@ -52,7 +52,7 @@ router.post('/', (req, res) => {
     }
     const id = utils.getUuid();
     const userId = req.userInfo.userId;
-    const sql = 'INSERT INTO WEB_TAG SET ?';
+    const sql = 'INSERT INTO WEB_NOTEBOOK SET ?';
     const params = { ID: id, CREATE_TIME: data.createTime, NAME: data.name, USER_ID: userId };
     database.query(sql, params, (error, results, fields) => {
       if (error) {
@@ -97,7 +97,7 @@ router.put('/', (req, res) => {
     if (_.isEmpty(data.modifyTime)) {
       throw new Error('没有修改时间');
     }
-    const sql = 'UPDATE WEB_TAG SET NAME = ?, MODIFY_TIME = ? WHERE ID = ?';
+    const sql = 'UPDATE WEB_NOTEBOOK SET NAME = ?, MODIFY_TIME = ? WHERE ID = ?';
     const params = [data.name, data.modifyTime, data.id];
     database.query(sql, params, (error, results, fields) => {
       if (error) {

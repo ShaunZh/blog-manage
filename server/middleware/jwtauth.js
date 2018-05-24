@@ -12,7 +12,7 @@ const jwtauth = (req, res, next) => {
   // 1. 获取token
   const token = (req.body && req.body.accessToken) || (req.query && req.query.accessToken) || (req.headers['x-access-token']);
   // 2. 如果获取的是与用户相关的信息，则需要token
-  if (req.url.indexOf('/articles') === 0 || req.url.indexOf('/tags') === 0) {
+  if (req.url.indexOf('/author/notes') === 0 || req.url.indexOf('/author/notebooks') === 0) {
     if (token) {
       try {
         // 解析token

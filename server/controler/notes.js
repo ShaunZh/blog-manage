@@ -14,36 +14,36 @@ const database = require('../config').database; // 引入数据库
 router.get('/', (req, res) => {
   try {
     const data = req.query;
-    const articlesList = [];
-    let limit = 5;
-    let offset = 0;
-    let sql = `SELECT ID, IS_PUBLISH, CREATE_TIME FROM WEB_ARTICLE `;
+    const notesList = [];
+    // let limit = 5;
+    // let offset = 0;
+    let sql = `SELECT ID, IS_PUBLISH, CREATE_TIME FROM WEB_NOTE `;
     // 判断传入的参数
     if (_.isObject(data)) {
-      // 是否返回指定tag的文章列表
-      if (!_.isUndefined(data.tagId) && data.tagId !== '') {
-        sql += `WHERE TAG_ID = "${data.tagId}" `;
+      // 是否返回指定notebook的文章列表
+      if (!_.isUndefined(data.notebookId) && data.notebookId !== '') {
+        sql += `WHERE NOTEBOOK_ID = "${data.notebookId}" `;
       }
-      if (!_.isUndefined(data.offset) && _.isNumber(data.offset)) {
-        offset = data.offset;
-      }
-      if (!_.isUndefined(data.limit) && _.isNumber(data.limit)) {
-        limit = data.limit;
-      }
+      // if (!_.isUndefined(data.offset) && _.isNumber(data.offset)) {
+      //   offset = data.offset;
+      // }
+      // if (!_.isUndefined(data.limit) && _.isNumber(data.limit)) {
+      //   limit = data.limit;
+      // }
     }
     database.beginTransaction((err) => {
       if (err) {
         throw err;
       }
-      sql += `ORDER BY CREATE_TIME DESC LIMIT ${offset}, ${limit};`;
-      // 查询ARTICLE表中的文章了列表，该表中包含有已发布的和未发布的所有文章，注意：不包含历史文章
+      sql += `ORDER BY CREATE_TIME DESC `;
+      // 查询NOTE表中的文章了列表，该表中包含有已发布的和未发布的所有文章，注意：不包含历史文章
       database.query(sql, (error, results) => {
         if (error) {
           return database.rollback(() => {
             throw error;
           });
         }
-        // 获取ARTICLE表中的文章列表，该列表中包含了已发布和未发布的文章列表信息
+        // 获取NOTE表中的文章列表，该列表中包含了已发布和未发布的文章列表信息
         const items = (JSON.parse(JSON.stringify(results))).map((item) => {
           return {
             id: item.ID,
@@ -53,20 +53,22 @@ router.get('/', (req, res) => {
         });
         // 获取文章列表，该文章列表包含的是文章最新修改的信息，并不是已发布的文章信息
         items.map((item, index) => {
-          const articleSql = `SELECT ARTICLE_ID, CREATE_TIME, TITLE, ABSTRACT, CONTENT FROM WEB_HISTORY_ARTICLE WHERE ARTICLE_ID = '${item.id}' ORDER BY CREATE_TIME DESC;`;
-          database.query(articleSql, (error1, results1) => {
+          const noteSql = `SELECT NOTE_ID, CREATE_TIME, TITLE, ABSTRACT, CONTENT FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${item.id}' ORDER BY CREATE_TIME DESC;`;
+          database.query(noteSql, (error1, results1) => {
             if (error1) {
               return database.rollback(() => {
                 throw error1;
               });
             }
-            articlesList.push({
-              id: results1[0].ARTICLE_ID,
+            notesList.push({
+              id: results1[0].NOTE_ID,
               modifyTime: results1[0].CREATE_TIME,
               title: results1[0].TITLE,
               abstract: results1[0].ABSTRACT,
               content: results1[0].CONTENT,
               createTime: item.createTime,
+              isPublish: item.isPublish,
+              isUpdate: item.isUpdate || false,
             });
             if (items.length === index + 1) {
               database.commit((err2) => {
@@ -77,7 +79,9 @@ router.get('/', (req, res) => {
                 }
                 res.send(JSON.stringify({
                   status: 200,
-                  data: articlesList,
+                  data: {
+                    items: notesList,
+                  },
                   msg: '获取文章列表成功',
                 }));
               });
@@ -108,8 +112,8 @@ router.get('/:id', (req, res) => {
     if (req.params.id === '') {
       throw new Error('id不能为空字符串');
     }
-    const historySql = `SELECT ARTICLE_ID AS id, CREATE_TIME AS modifyTime, TITLE AS title, ABSTRACT AS abstract, CONTENT AS content FROM WEB_HISTORY_ARTICLE AS history WHERE history.ARTICLE_ID = '${req.params.id}' ORDER BY CREATE_TIME DESC LIMIT 1;`;
-    const articleSql = `SELECT ID, IS_PUBLISH AS isPublish FROM WEB_ARTICLE WHERE ID = '${req.params.id}';`;
+    const historySql = `SELECT NOTE_ID AS id, CREATE_TIME AS modifyTime, TITLE AS title, ABSTRACT AS abstract, CONTENT AS content, IS_UPDATE AS isUpdate FROM WEB_HISTORY_NOTE AS history WHERE history.NOTE_ID = '${req.params.id}' ORDER BY CREATE_TIME DESC LIMIT 1;`;
+    const noteSql = `SELECT ID, IS_PUBLISH AS isPublish FROM WEB_NOTE WHERE ID = '${req.params.id}';`;
     database.beginTransaction((err) => {
       if (err) {
         throw err;
@@ -120,14 +124,14 @@ router.get('/:id', (req, res) => {
             throw error;
           });
         }
-        const articleInfo = results[0];
-        database.query(articleSql, (error2, results2, fileds) => {
+        const noteInfo = results[0];
+        database.query(noteSql, (error2, results2, fileds) => {
           if (error2) {
             return database.rollback(() => {
               throw error2;
             });
           }
-          Object.assign(articleInfo, { isPublish: results2[0].isPublish });
+          Object.assign(noteInfo, { isPublish: results2[0].isPublish });
           database.commit((err2) => {
             if (err2) {
               return database.rollback(() => {
@@ -136,7 +140,7 @@ router.get('/:id', (req, res) => {
             }
             res.send(JSON.stringify({
               status: 200,
-              data: articleInfo,
+              data: noteInfo,
               msg: '获取文章详情成功',
             }));
           });
@@ -166,10 +170,10 @@ router.post('/', (req, res) => {
       throw new Error('参数不能为null');
     }
     const userId = req.userInfo.userId;
-    const articleSql = 'INSERT INTO WEB_ARTICLE SET ?';
-    const articleParams = {
+    const noteSql = 'INSERT INTO WEB_NOTE SET ?';
+    const noteParams = {
       ID: utils.getUuid(), // id
-      TAG_ID: data.tagId, // tag id
+      NOTEBOOK_ID: data.notebookId, // notebook id
       CREATE_TIME: data.createTime, // 创建时间
       TITLE: data.title, // 标题
       CONTENT: data.content, // 正文
@@ -178,10 +182,10 @@ router.post('/', (req, res) => {
       USER_ID: userId,
       MODIFY_TIME: data.createTime, // 添加文章时，默认的修改时间为创建时间
     };
-    const historyArticleSql = 'INSERT INTO WEB_HISTORY_ARTICLE SET ? ';
-    const historyArticleParams = {
+    const historyNoteSql = 'INSERT INTO WEB_HISTORY_NOTE SET ? ';
+    const historyNoteParams = {
       ID: utils.getUuid(),
-      ARTICLE_ID: articleParams.ID,
+      NOTE_ID: noteParams.ID,
       CREATE_TIME: data.createTime,
       TITLE: data.title,
       ABSTRACT: data.abstract,
@@ -191,11 +195,11 @@ router.post('/', (req, res) => {
       if (err) {
         throw err;
       }
-      database.query(articleSql, articleParams, (error, results, fields) => {
+      database.query(noteSql, noteParams, (error, results, fields) => {
         if (error) {
           throw error;
         }
-        database.query(historyArticleSql, historyArticleParams, (error2, results2, fields2) => {
+        database.query(historyNoteSql, historyNoteParams, (error2, results2, fields2) => {
           if (error2) {
             throw error;
           }
@@ -208,8 +212,8 @@ router.post('/', (req, res) => {
             res.send(JSON.stringify({
               status: 200,
               data: {
-                id: articleParams.ID,
-                title: articleParams.TITLE,
+                id: noteParams.ID,
+                title: noteParams.TITLE,
               },
               msg: '添加成功',
             }));
@@ -227,7 +231,7 @@ router.post('/', (req, res) => {
 });
 
 /**
- * @description 在编辑文章时，自动保存文章到WEB_HISTORY_ARTICLE中
+ * @description 在编辑文章时，自动保存文章到WEB_HISTORY_NOTE中
  * @param
  * @return
  */
@@ -240,20 +244,21 @@ router.post('/autoSave', (req, res) => {
     if (_.isNull(data)) {
       throw new Error('参数不能为null');
     }
-    const historyArticleSql = 'INSERT INTO WEB_HISTORY_ARTICLE SET ? ';
-    const historyArticleParams = {
+    const historyNoteSql = 'INSERT INTO WEB_HISTORY_NOTE SET ? ';
+    const historyNoteParams = {
       ID: utils.getUuid(),
-      ARTICLE_ID: data.id,
-      CREATE_TIME: data.createTime,
+      NOTE_ID: data.id,
+      CREATE_TIME: data.modifyTime,
       TITLE: data.title,
       ABSTRACT: data.abstract,
       CONTENT: data.content,
+      IS_UPDATE: data.isUpdate,
     };
     database.beginTransaction((err) => {
       if (err) {
         throw err;
       }
-      database.query(`SELECT ID FROM WEB_HISTORY_ARTICLE WHERE ARTICLE_ID = '${data.id}' ORDER BY CREATE_TIME DESC;`, (error, results, fields) => {
+      database.query(`SELECT ID FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME DESC;`, (error, results, fields) => {
         if (error) {
           return database.rollback(() => {
             throw error;
@@ -269,7 +274,7 @@ router.post('/autoSave', (req, res) => {
             }
           });
         }
-        database.query(historyArticleSql, historyArticleParams, (error2, results2, fields) => {
+        database.query(historyNoteSql, historyNoteParams, (error2, results2, fields) => {
           if (error2) {
             throw new Error(error2.message);
           }
@@ -309,51 +314,46 @@ router.put('/', (req, res) => {
     if (_.isNull(data)) {
       throw new Error('参数不能为null');
     }
-    if (_.isEmpty(data.modifyTime)) {
+    if (_.isUndefined(data.modifyTime)) {
       throw new Error('没有修改时间');
     }
-    let sql = 'UPDATE WEB_ARTICLE SET ';
-    let params = [];
-    if (!_.isUndefined(data.title) && data.title !== '') {
-      sql += 'TITLE = ?, ';
-      params.push(data.title);
+    if (_.isUndefined(data.isPublish)) {
+      throw new Error('没有发布参数');
     }
-    if (!_.isUndefined(data.modifyTime) && data.modifyTime !== '') {
-      sql += 'MODIFY_TIME = ?, ';
-      params.push(data.modfiyTime);
-    }
-    if (!_.isUndefined(data.tagId) && data.tagId !== '') {
-      sql += 'TAG_ID = ?, ';
-      params.push(data.tagId);
-    }
-    if (!_.isUndefined(data.abstract) && data.abstract !== '') {
-      sql += 'ABSTRACT = ?, ';
-      params.push(data.abstract);
-    }
-    if (!_.isUndefined(data.content) && data.content !== '') {
-      sql += 'CONTENT = ?, ';
-      params.push(data.content);
-    }
-    if (!_.isUndefined(data.isPublish)) {
-      sql += 'IS_PUBLISH = ?, ';
-      params.push(data.isPublish);
-    }
-    if (params.length === 0) {
-      throw new Error('没有传递需要修改的数据');
-    }
-    sql = sql.substring(0, sql.length - 2);
-    sql += ` WHERE ID = "${data.id}"`;
-    database.query(sql, params, (error, results, fields) => {
-      if (error) {
-        throw new Error(error);
+    const updateSql = 'UPDATE WEB_NOTE SET TITLE = ?, CONTENT = ?, ABSTRACT = ?, IS_PUBLISH = ?';
+    const historySql = `SELECT NOTE_ID,  TITLE AS title, CONTENT AS content, ABSTRACT AS abstract FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME LIMIT 1;`;
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
       }
-      res.send(JSON.stringify({
-        status: 200,
-        data: {
-          id: data.id,
-        },
-        msg: '更新成功',
-      }));
+      database.query(historySql, (error, results, fields) => {
+        if (error) {
+          return database.rollback(() => {
+            throw error;
+          });
+        }
+        if (results.length) {
+          const updateData = results[0];
+          database.query(updateSql, [updateData.title, updateData.content, updateData.abstract, data.modifyTime, data.isPublish], (error2, results2, fields2) => {
+            if (error2) {
+              return database.rollback(() => {
+                throw error2;
+              });
+            }
+            database.commit((err2) => {
+              if (err2) {
+                throw database.rollback(() => {
+                  throw error;
+                });
+              }
+              res.send(JSON.stringify({
+                status: 200,
+                msg: data.isPublish ? '发布成功' : '撤销成功',
+              }));
+            });
+          });
+        }
+      });
     });
   } catch (e) {
     res.send(JSON.stringify({
@@ -380,8 +380,8 @@ router.delete('/', (req, res) => {
     if (_.isEmpty(data.id)) {
       throw new Error('id不能为空');
     }
-    const sql = `DELETE FROM WEB_ARTICLE WHERE ID = '${data.id}'`;
-    const historySql = `DELETE FROM WEB_HISTORY_ARTICLE WHERE ARTICLE_ID = '${data.id}';`;
+    const sql = `DELETE FROM WEB_NOTE WHERE ID = '${data.id}'`;
+    const historySql = `DELETE FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}';`;
     database.beginTransaction((err) => {
       if (err) {
         throw err;
@@ -404,7 +404,7 @@ router.delete('/', (req, res) => {
           }));
         });
       });
-    })
+    });
   } catch (e) {
     res.send(JSON.stringify({
       status: 400,
