@@ -320,8 +320,8 @@ router.put('/', (req, res) => {
     if (_.isUndefined(data.isPublish)) {
       throw new Error('没有发布参数');
     }
-    const updateSql = 'UPDATE WEB_NOTE SET TITLE = ?, CONTENT = ?, ABSTRACT = ?, IS_PUBLISH = ?';
-    const historySql = `SELECT NOTE_ID,  TITLE AS title, CONTENT AS content, ABSTRACT AS abstract FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME LIMIT 1;`;
+    const updateSql = `UPDATE WEB_NOTE SET TITLE = ?, CONTENT = ?, ABSTRACT = ?, MODIFY_TIME = ?, IS_PUBLISH = ? WHERE ID = '${data.id}';`;
+    const historySql = `SELECT NOTE_ID, TITLE AS title, CONTENT AS content, ABSTRACT AS abstract FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME LIMIT 1;`;
     database.beginTransaction((err) => {
       if (err) {
         throw err;
@@ -334,22 +334,29 @@ router.put('/', (req, res) => {
         }
         if (results.length) {
           const updateData = results[0];
-          database.query(updateSql, [updateData.title, updateData.content, updateData.abstract, data.modifyTime, data.isPublish], (error2, results2, fields2) => {
-            if (error2) {
+          database.query(`UPDATE WEB_HISTORY_NOTE SET IS_UPDATE = 0 WHERE NOTE_ID = '${data.id}';`, (error1, results, fields) => {
+            if (error1) {
               return database.rollback(() => {
-                throw error2;
+                throw error1;
               });
             }
-            database.commit((err2) => {
-              if (err2) {
-                throw database.rollback(() => {
-                  throw error;
+            database.query(updateSql, [updateData.title, updateData.content, updateData.abstract, data.modifyTime, data.isPublish], (error2, results2, fields2) => {
+              if (error2) {
+                return database.rollback(() => {
+                  throw error2;
                 });
               }
-              res.send(JSON.stringify({
-                status: 200,
-                msg: data.isPublish ? '发布成功' : '撤销成功',
-              }));
+              database.commit((err2) => {
+                if (err2) {
+                  throw database.rollback(() => {
+                    throw error;
+                  });
+                }
+                res.send(JSON.stringify({
+                  status: 200,
+                  msg: data.isPublish ? '发布成功' : '撤销成功',
+                }));
+              });
             });
           });
         }
