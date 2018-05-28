@@ -228,7 +228,7 @@ export default {
         sort,
       };
       axios({
-        url: this.$appConfig.api.notes.autoSave,
+        url: this.$appConfig.api.notes.add,
         method: 'POST',
         data: JSON.stringify(noteData),
       })
@@ -319,6 +319,7 @@ export default {
         data: JSON.stringify(noteInfo),
       })
         .then((response) => {
+          debugger
           if (response.data.status === 200) {
             Object.assign(this.notesList[this.currentNoteIndex], noteInfo);
           } else {
@@ -337,9 +338,7 @@ export default {
      * @return
      */
     autoSaveNote(noteInfo) {
-      debugger
       Object.assign(this.notesList[this.currentNoteIndex], noteInfo);
-
     },
   },
 };
