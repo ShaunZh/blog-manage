@@ -136,16 +136,44 @@ router.delete('/', (req, res) => {
     if (_.isEmpty(data.id)) {
       throw new Error('标签id不能为空');
     }
-    const sql = `DELETE FROM WEB_TAG WHERE ID = "${data.id}"`;
-    database.query(sql, (error, results, fields) => {
-      if (error) {
-        throw new Error(error);
+    const removeNotebook = `DELETE FROM WEB_NOTEBOOK WHERE ID = "${data.id}"`;
+    const removeNote = `DELETE FROM WEB_NOTE WHERE NOTEBOOK_ID = '${data.id}';`;
+    const removeHistoryNote = `DELETE FROM WEB_HISTORY_NOTE WHERE NOTE_ID IN (SELECT ID FROM WEB_NOTE WHERE NOTEBOOK_ID = '${data.id}');`;
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
       }
-      res.send(JSON.stringify({
-        status: 200,
-        data: null,
-        msg: '删除成功',
-      }));
+      database.query(removeNotebook, (error, results, fields) => {
+        if (error) {
+          return database.rollback(() => {
+            throw error;
+          });
+        }
+        database.query(removeHistoryNote, (error1, results1, fields1) => {
+          if (error1) {
+            return database.rollback(() => {
+              throw error1;
+            });
+          }
+          database.query(removeNote, (error2, results2, fiedls2) => {
+            if (error2) {
+              return database.rollback(() => {
+                throw error2;
+              });
+            }
+            database.commit((err2) => {
+              if (err2) {
+                throw err2;
+              }
+              res.send(JSON.stringify({
+                status: 200,
+                data: null,
+                msg: '删除成功',
+              }));
+            });
+          });
+        });
+      });
     });
   } catch (e) {
     res.send(JSON.stringify({

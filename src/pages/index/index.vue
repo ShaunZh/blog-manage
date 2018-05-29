@@ -200,7 +200,7 @@ export default {
             type: 'error',
             message: error.message,
           });
-        })
+        });
     },
     /**
      * @description 添加文章
@@ -255,7 +255,7 @@ export default {
      */
     deleteNotebook(index) {
       axios({
-        url: this.$appConfig.api.notebooks,
+        url: this.$appConfig.api.notebooks.remove,
         method: 'DELETE',
         data: JSON.stringify({
           id: this.notebooksList[index].id,
@@ -264,6 +264,7 @@ export default {
         .then((response) => {
           if (response.data.status === 200) {
             this.notebooksList.splice(index, 1);
+            this.notesList.splice(0, this.notesList.length);
             this.$message({
               type: 'success',
               message: '删除成功!',
@@ -321,7 +322,7 @@ export default {
         .then((response) => {
           debugger
           if (response.data.status === 200) {
-            Object.assign(this.notesList[this.currentNoteIndex], noteInfo);
+            this.notesList[this.currentNoteIndex] = Object.assign({}, this.notesList[this.currentNoteIndex], noteInfo);
           } else {
             throw new Error(response.data.message);
           }

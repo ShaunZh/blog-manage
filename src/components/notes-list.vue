@@ -10,10 +10,11 @@
         新建文章
       </p>
     </div>
-    <ul class="body p-0" v-if="notesList.length">
+    <ul class="body p-0" >
       <li class="row  py-4 px-4 item no-gutters "
           :class="{'active': item.id === notesList[activeIndex].id}"
           v-for="(item, index) in notesList"
+          v-bind:key="item.id"
           @click.stop="switchNote($event, index)">
         <!--文章发布状态-->
         <div class="col-2 text-left">
@@ -76,6 +77,7 @@
         </div>
       </li>
     </ul>
+    <!--<ul class="body p-0" v-else></ul>-->
     <div class="add-on-down row m-0 no-gutters" @click.stop="submitAddNote(-1)">
       <p class="py-3 m-0 px-3 mx-3">
         <i class="font-weight-bold add-icon">+</i>
@@ -98,7 +100,8 @@ export default {
       activeIndex: 0, // 选中文章
     };
   },
-  watch: {},
+  watch: {
+  },
   created() {
   },
   methods: {

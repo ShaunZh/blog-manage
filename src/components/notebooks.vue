@@ -92,10 +92,9 @@ export default {
         createTime: utils.getDate(),
       };
       axios({
-        url: this.$appConfig.api.notebooks,
+        url: this.$appConfig.api.notebooks.add,
         method: 'POST',
         data: JSON.stringify(notebookData),
-        headers: { 'Content-Type': 'application/json' },
       })
         .then((response) => {
           if (response.data.status === 200) {
