@@ -28,6 +28,7 @@ const apiConfig = {
       add: `${apiDomain}/author/notes`, // 添加文章 post方法
       autoSave: `${apiDomain}/author/notes/autoSave`, // 自动保存文章
       update: `${apiDomain}/author/notes`, // 更新文章，put方法
+      remove: `${apiDomain}/author/notes`, // 删除文章，delete方法
     },
   },
 };

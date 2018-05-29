@@ -283,7 +283,7 @@ export default {
      */
     deleteNote(index) {
       axios({
-        url: this.$appConfig.api.notes,
+        url: this.$appConfig.api.notes.remove,
         method: 'DELETE',
         data: JSON.stringify({
           id: this.notesList[index].id,
