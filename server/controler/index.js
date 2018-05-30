@@ -10,8 +10,10 @@ module.exports = function (app) {
   // app.use('/tags', require('./tags.js'));
   // app.use('/articles', require('./articles.js'));
 
-  // 笔记本
+  // 后台管理接口笔记本
   app.use('/author/notebooks', require('./notebooks.js'));
   // 笔记
   app.use('/author/notes', require('./notes.js'));
+  // 前端访问接口
+  app.use('/blog', require('./web_interface.js'));
 };

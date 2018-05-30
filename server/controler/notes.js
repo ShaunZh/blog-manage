@@ -321,7 +321,7 @@ router.put('/', (req, res) => {
       throw new Error('没有发布参数');
     }
     const updateSql = `UPDATE WEB_NOTE SET TITLE = ?, CONTENT = ?, ABSTRACT = ?, MODIFY_TIME = ?, IS_PUBLISH = ? WHERE ID = '${data.id}';`;
-    const historySql = `SELECT NOTE_ID, TITLE AS title, CONTENT AS content, ABSTRACT AS abstract FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME LIMIT 1;`;
+    const historySql = `SELECT NOTE_ID, TITLE AS title, CONTENT AS content, ABSTRACT AS abstract FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${data.id}' ORDER BY CREATE_TIME DESC LIMIT 1;`;
     database.beginTransaction((err) => {
       if (err) {
         throw err;

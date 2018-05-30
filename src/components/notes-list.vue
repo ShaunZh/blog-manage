@@ -148,6 +148,7 @@ export default {
         this.$message({
           type: 'info',
           message: '已取消删除',
+          duration: 1000,
         });
       });
     },

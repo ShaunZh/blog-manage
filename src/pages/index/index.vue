@@ -187,6 +187,7 @@ export default {
             this.$message({
               type: 'success',
               message: '更新成功',
+              duration: 1000, // 显示时间
             });
             this.notebooksList.splice(notebookIndex, 1, data);
             // this.notebooksList[notebookIndex] = Object.assign({}, this.notebooksList[notebookIndex], {name: newName});
@@ -199,6 +200,7 @@ export default {
           this.$message({
             type: 'error',
             message: error.message,
+            duration: 1000,
           });
         });
     },
@@ -239,6 +241,7 @@ export default {
             this.$message({
               type: 'success',
               message: '添加文章成功!',
+              duration: 1000,
             });
           } else {
             throw new Error(`添加文章失败: ${response.msg}`);
@@ -268,6 +271,7 @@ export default {
             this.$message({
               type: 'success',
               message: '删除成功!',
+              duration: 1000, // 显示时间
             });
           } else {
             throw new Error(response.msg);
@@ -296,6 +300,7 @@ export default {
             this.$message({
               type: 'success',
               message: '删除成功!',
+              duration: 1000, // 显示时间
             });
           } else {
             throw new Error(response.msg);
@@ -320,7 +325,6 @@ export default {
         data: JSON.stringify(noteInfo),
       })
         .then((response) => {
-          debugger
           if (response.data.status === 200) {
             this.notesList[this.currentNoteIndex] = Object.assign({}, this.notesList[this.currentNoteIndex], noteInfo);
           } else {
