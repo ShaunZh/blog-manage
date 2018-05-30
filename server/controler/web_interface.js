@@ -116,4 +116,39 @@ router.get('/notebooks/:id/notes', (req, res) => {
   }
 });
 
+/**
+ * @description 获取文章详情
+ * @param
+ * @return
+ */
+router.get('/notes/:id/content', (req, res) => {
+  try {
+    if (_.isUndefined(req.params.id)) {
+      throw new Error('参数错误：请填写文章id');
+    }
+    const noteSql = `SELECT ID AS id, MODIFY_TIME, TITLE AS title, ABSTRACT AS abstract, CONTENT AS content FROM WEB_NOTE WHERE ID = '${req.params.id}';`;
+    database.query(noteSql, (error, results) => {
+      if (error) {
+        throw new Error(error.message);
+      }
+      res.send(JSON.stringify({
+        status: 200,
+        msg: '获取文章成功',
+        data: {
+          id: results[0].id,
+          modifyTime: results[0].modifyTime,
+          title: results[0].title,
+          abstract: results[0].abstract,
+          content: results[0].content,
+        },
+      }));
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      status: 400,
+      msg: e.message,
+    }));
+  }
+});
+
 module.exports = router;
