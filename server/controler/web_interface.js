@@ -13,26 +13,46 @@ const userId = 'e6a92aa0-5b69-11e8-9b6c-e35b8d59cc9e';
  */
 router.get('/notebooks', (req, res) => {
   try {
-    database.query(`SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_NOTEBOOK WHERE USER_ID = '${userId}' ORDER BY CREATE_TIME`, (error, results, fields) => {
-      if (error) {
-        throw new Error(error);
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
       }
-      let items = JSON.parse(JSON.stringify(results));
-      items = items.map((item) => {
-        const obj = {};
-        obj.id = item.ID;
-        obj.name = item.NAME;
-        obj.createTime = item.CREATE_TIME;
-        obj.modifyTime = item.MODIFY_TIME;
-        return obj;
+      database.query(`SELECT ID, NAME, CREATE_TIME, MODIFY_TIME FROM WEB_NOTEBOOK WHERE USER_ID = '${userId}' ORDER BY CREATE_TIME`, (error, results, fields) => {
+        if (error) {
+          return database.rollback(() => {
+            throw error;
+          });
+        }
+        const notebooksList = [];
+        let items = JSON.parse(JSON.stringify(results));
+        items = items.map((item, index) => {
+          const getNotesNum = `SELECT COUNT(*) AS notesCount FROM WEB_NOTE WHERE USER_ID = '${userId}' AND NOTEBOOK_ID = '${item.ID}';`;
+          database.query(getNotesNum, (error1, results1) => {
+            if (error1) {
+              return database.rollback(() => {
+                throw error1;
+              });
+            }
+            const notesCount = JSON.parse(JSON.stringify(results1[0]));
+            notebooksList.push({
+              id: item.ID,
+              name: item.NAME,
+              createTime: item.CREATE_TIME,
+              modifyTime: item.MODIFY_TIME,
+              notesCount: notesCount.notesCount,
+            });
+            if (items.length === index + 1) {
+              res.send(JSON.stringify({
+                status: 200,
+                msg: '成功',
+                data: {
+                  notebooksList,
+                },
+              }));
+            }
+          });
+        });
       });
-      res.send(JSON.stringify({
-        status: 200,
-        msg: '成功',
-        data: {
-          items,
-        },
-      }));
     });
   } catch (e) {
     res.send(JSON.stringify({
@@ -151,4 +171,76 @@ router.get('/notes/:id/content', (req, res) => {
   }
 });
 
+/**
+ * @description 用户信息
+ * @param
+ * @return
+ */
+router.get('/userInfo', (req, res) => {
+  try {
+    const userInfoSql = `SELECT ID AS id, USERNAME AS username, HEAD_IMG AS headImg, INTRO AS intro, GITHUB AS github, JIANSHU AS jianshu FROM WEB_USER WHERE ID = '${userId}';`;
+    database.query(userInfoSql, (error, results) => {
+      if (error) {
+        throw new Error(error.message);
+      }
+      res.send(JSON.stringify({
+        status: 200,
+        data: {
+          id: results[0].id,
+          username: results[0].username,
+          headImg: results[0].headImg,
+          intro: results[0].intro,
+          github: results[0].github,
+          jianshu: results[0].jianshu,
+        },
+        msg: '获取用户信息成功',
+      }));
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      status: 400,
+      msg: e.message,
+    }));
+  }
+});
+
+/**
+ * @description 获取最新的文章列表
+ * @param
+ * @return
+ */
+router.get('/latestNotes', (req, res) => {
+  try {
+    let notesNum = req.params.notesNum;
+    if (_.isUndefined(notesNum)) {
+      notesNum = 8;
+    }
+    const notesSql = `SELECT ID AS id, CREATE_TIME AS createTime, TITLE AS title, ABSTRACT AS abstract FROM WEB_NOTE ORDER BY CREATE_TIME DESC LIMIT ${notesNum};`;
+    database.query(notesSql, (error, results) => {
+      if (error) {
+        throw new Error(error.message);
+      }
+      const items = results.map((item) => {
+        return {
+          id: item.id,
+          createTime: item.createTime,
+          title: item.title,
+          abstract: item.abstract,
+        };
+      });
+      res.send(JSON.stringify({
+        status: 200,
+        data: {
+          items,
+        },
+        msg: '获取最新文章列表成功',
+      }));
+    });
+  } catch (e) {
+    res.send(JSON.stringify({
+      status: 400,
+      msg: e.message,
+    }));
+  }
+});
 module.exports = router;
