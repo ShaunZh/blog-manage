@@ -76,6 +76,7 @@ export default {
     getNotebooksList() {
       axios.get(this.$appConfig.api.notebooks.list)
         .then((response) => {
+          debugger
           if (response.data.status === 200 && response.data.data.items !== undefined) {
             this.notebooksList = response.data.data.items;
             this.currentNotebookIndex = 0;
@@ -93,12 +94,14 @@ export default {
      * @return
      */
     getNotesList() {
+      debugger
       if (this.notebooksList[this.currentNotebookIndex] !== undefined) {
         axios({
           url: `${this.$appConfig.api.notes.list}?notebookId=${this.notebooksList[this.currentNotebookIndex].id}`,
           method: 'GET',
         })
           .then((response) => {
+            debugger
             if (response.data.status === 200 && response.data.data.items !== undefined) {
               // todo : isDispSetting 是用于控制显示设置信息的开关，不应该在此处放在notesList中，应该放在aritcls-list.vue中
               this.notesList = response.data.data.items.map(item =>
@@ -119,6 +122,7 @@ export default {
      * @return
      */
     getNote(index) {
+      debugger
       let noteId = '';
       if (this.notesList[index] !== undefined) {
         noteId = this.notesList[index].id;

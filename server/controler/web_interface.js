@@ -209,32 +209,70 @@ router.get('/userInfo', (req, res) => {
  * @param
  * @return
  */
-router.get('/latestNotes', (req, res) => {
+router.get('/notes', (req, res) => {
   try {
-    let notesNum = req.params.notesNum;
-    if (_.isUndefined(notesNum)) {
-      notesNum = 8;
+    if (_.isUndefined(req.query.limit)) {
+      throw new Error('缺少参数: 请填写每页的文章数');
     }
-    const notesSql = `SELECT ID AS id, CREATE_TIME AS createTime, TITLE AS title, ABSTRACT AS abstract FROM WEB_NOTE ORDER BY CREATE_TIME DESC LIMIT ${notesNum};`;
-    database.query(notesSql, (error, results) => {
-      if (error) {
-        throw new Error(error.message);
+    if (_.isUndefined(req.query.offset)) {
+      throw new Error('缺少参数: 请填写获取文章的偏移位置');
+    }
+    const limit = Number(req.params.limit); // limit 是前端传来的每页的记录数
+    const offset = Number(req.params.offset - 1) * limit; // offset 是前端传来的页码
+    const notesSql = `SELECT ID AS id, NOTEBOOK_ID AS notebookId, CREATE_TIME AS createTime, TITLE AS title, ABSTRACT AS abstract FROM WEB_NOTE ORDER BY CREATE_TIME DESC LIMIT ${limit} OFFSET ${offset};`;
+    let totalCount; // 文章总数
+    const notesList = []; // 文章列表
+    database.beginTransaction((err) => {
+      if (err) {
+        throw err;
       }
-      const items = results.map((item) => {
-        return {
-          id: item.id,
-          createTime: item.createTime,
-          title: item.title,
-          abstract: item.abstract,
-        };
+      // 获取文章总数
+      database.query(`SELECT COUNT(*) AS totalCount FROM WEB_NOTE WHERE USER_ID = '${userId}' AND IS_PUBLISH = true;`, (error1, results1) => {
+        if (error1) {
+          return database.rollback((err1) => {
+            throw new Error(error1.message);
+          });
+        }
+        // 文章总数
+        totalCount = JSON.parse(JSON.stringify(results1[0].totalCount));
+        // 获取文章列表
+        database.query(notesSql, (error, results) => {
+          if (error) {
+            return database.rollback(() => {
+              throw new Error(error.message);
+            });
+          }
+          results.map((item, index) => {
+            database.query(`SELECT ID, NAME AS notebookName FROM WEB_NOTEBOOK WHERE ID = '${item.notebookId}' AND USER_ID = '${userId}';`, (error1, results1) => {
+              if (error1) {
+                return database.rollback(() => {
+                  throw new Error(error1.message);
+                });
+              }
+              notesList.push({
+                id: item.id,
+                createTime: item.createTime,
+                title: item.title,
+                abstract: item.abstract,
+                notebookId: item.notebookId,
+                notebookName: item.notebookName,
+              });
+              if (item.length === index + 1) {
+                res.send(JSON.stringify({
+                  status: 200,
+                  data: {
+                    items: notesList,
+                    totalCount, // 文章的总页数
+                    totalPage: totalCount > 0 ? ((_.parseInt(totalCount / limit)) + ((totalCount % limit) ? 1 : 0)) : 0,
+                    curPage: offset + 1, // 当前页数
+                  },
+                  msg: '获取最新文章列表成功',
+                }));
+              }
+            });
+          });
+        });
       });
-      res.send(JSON.stringify({
-        status: 200,
-        data: {
-          items,
-        },
-        msg: '获取最新文章列表成功',
-      }));
     });
   } catch (e) {
     res.send(JSON.stringify({

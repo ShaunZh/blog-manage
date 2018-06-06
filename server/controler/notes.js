@@ -51,43 +51,53 @@ router.get('/', (req, res) => {
             createTime: item.CREATE_TIME,
           };
         });
-        // 获取文章列表，该文章列表包含的是文章最新修改的信息，并不是已发布的文章信息
-        items.map((item, index) => {
-          const noteSql = `SELECT NOTE_ID, CREATE_TIME, TITLE, ABSTRACT, CONTENT FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${item.id}' ORDER BY CREATE_TIME DESC;`;
-          database.query(noteSql, (error1, results1) => {
-            if (error1) {
-              return database.rollback(() => {
-                throw error1;
+        if (items.length) {
+          // 获取文章列表，该文章列表包含的是文章最新修改的信息，并不是已发布的文章信息
+          items.map((item, index) => {
+            const noteSql = `SELECT NOTE_ID, CREATE_TIME, TITLE, ABSTRACT, CONTENT FROM WEB_HISTORY_NOTE WHERE NOTE_ID = '${item.id}' ORDER BY CREATE_TIME DESC;`;
+            database.query(noteSql, (error1, results1) => {
+              if (error1) {
+                return database.rollback(() => {
+                  throw error1;
+                });
+              }
+              notesList.push({
+                id: results1[0].NOTE_ID,
+                modifyTime: results1[0].CREATE_TIME,
+                title: results1[0].TITLE,
+                abstract: results1[0].ABSTRACT,
+                content: results1[0].CONTENT,
+                createTime: item.createTime,
+                isPublish: item.isPublish,
+                isUpdate: item.isUpdate || false,
               });
-            }
-            notesList.push({
-              id: results1[0].NOTE_ID,
-              modifyTime: results1[0].CREATE_TIME,
-              title: results1[0].TITLE,
-              abstract: results1[0].ABSTRACT,
-              content: results1[0].CONTENT,
-              createTime: item.createTime,
-              isPublish: item.isPublish,
-              isUpdate: item.isUpdate || false,
+              if (items.length === index + 1) {
+                database.commit((err2) => {
+                  if (err2) {
+                    return database.rollback(() => {
+                      throw err2;
+                    });
+                  }
+                  res.send(JSON.stringify({
+                    status: 200,
+                    data: {
+                      items: notesList,
+                    },
+                    msg: '获取文章列表成功',
+                  }));
+                });
+              }
             });
-            if (items.length === index + 1) {
-              database.commit((err2) => {
-                if (err2) {
-                  return database.rollback(() => {
-                    throw err2;
-                  });
-                }
-                res.send(JSON.stringify({
-                  status: 200,
-                  data: {
-                    items: notesList,
-                  },
-                  msg: '获取文章列表成功',
-                }));
-              });
-            }
           });
-        });
+        } else {
+          res.send(JSON.stringify({
+            status: 200,
+            data: {
+              items: [],
+            },
+            msg: '获取文章列表成功',
+          }));
+        }
       });
     });
   } catch (e) {
